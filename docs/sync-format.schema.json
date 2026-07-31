@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cifratrack.app/schemas/cifra-sync-1.0.0.json",
+  "title": "CifraSyncDocument",
+  "description": "Formato de sincronização de cifra do CifraTrack (DF-SYNC-1.0.0)",
+  "type": "object",
+  "required": ["formatVersion", "track", "events"],
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "track": {
+      "type": "object",
+      "required": ["title", "artist", "originalKey", "bpm", "timeSignature", "durationSec"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "artist": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "originalKey": { "type": "string", "maxLength": 8 },
+        "bpm": { "type": "number", "minimum": 40, "maximum": 240 },
+        "timeSignature": { "type": "string", "pattern": "^[0-9]{1,2}/[0-9]{1,2}$" },
+        "durationSec": { "type": "number", "exclusiveMinimum": 0 },
+        "tuning": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 4,
+          "maxItems": 8
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "source": { "type": "string", "enum": ["auto", "manual", "hybrid"] },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "generator": { "type": "string" },
+        "confidence": {
+          "type": "object",
+          "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "startSec", "endSec"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "startSec": { "type": "number", "minimum": 0 },
+          "endSec": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "beats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["t", "beat", "bar"],
+        "additionalProperties": false,
+        "properties": {
+          "t": { "type": "number", "minimum": 0 },
+          "beat": { "type": "integer", "minimum": 1 },
+          "bar": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "t", "chord"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "t": { "type": "number", "minimum": 0 },
+          "tEnd": { "type": "number", "minimum": 0 },
+          "chord": { "$ref": "#/$defs/chord" },
+          "lyricLine": { "type": ["string", "null"] },
+          "sectionId": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "lyrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "t", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "t": { "type": "number", "minimum": 0 },
+          "tEnd": { "type": "number", "minimum": 0 },
+          "text": { "type": "string" },
+          "sectionId": { "type": ["string", "null"] }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "chord": {
+      "type": "object",
+      "required": ["symbol", "root", "quality"],
+      "additionalProperties": false,
+      "properties": {
+        "symbol": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "minLength": 1, "maxLength": 3 },
+        "quality": { "type": "string", "minLength": 1 },
+        "bass": { "type": ["string", "null"] },
+        "extensions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

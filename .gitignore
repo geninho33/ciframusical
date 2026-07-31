@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pnpm-store/
+
+# Build
+dist/
+build/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Media / local uploads
+uploads/
+tmp/
+*.mp3
+*.wav
+*.flac
+
+# Logs
+*.log
+logs/
+
+# Docker
+.docker-data/
