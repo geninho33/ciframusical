@@ -62,8 +62,9 @@ export function TrackDetailPage() {
   async function onPublish() {
     if (!track || !accessToken) return;
     try {
-      const updated = await publishTrack(track.id, accessToken);
-      setTrack(updated);
+      await publishTrack(track.id, accessToken);
+      const refreshed = await fetchTrack(track.slug, accessToken);
+      setTrack(refreshed);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Falha ao publicar");
     }
@@ -111,6 +112,11 @@ export function TrackDetailPage() {
           {track.sync ? (
             <Link className={styles.primary} to={`/praticar/${track.slug}`}>
               Praticar (Play-Along)
+            </Link>
+          ) : null}
+          {(hasRole("creator") || hasRole("admin")) && track.sync ? (
+            <Link className={styles.secondary} to={`/editar-sync/${track.slug}`}>
+              Editar sync
             </Link>
           ) : null}
           {user && track.status === "published" ? (

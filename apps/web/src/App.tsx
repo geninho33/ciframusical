@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
+import { AdminApprovalsPage } from "./pages/AdminApprovalsPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { CatalogPage } from "./pages/CatalogPage";
 import { CreatorUploadPage } from "./pages/CreatorUploadPage";
@@ -10,6 +11,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { PracticePage } from "./pages/PracticePage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { SyncEditorPage } from "./pages/SyncEditorPage";
 import { TrackDetailPage } from "./pages/TrackDetailPage";
 
 export function App() {
@@ -20,6 +22,7 @@ export function App() {
         <Route index element={<HomePage />} />
         <Route path="catalogo" element={<CatalogPage />} />
         <Route path="faixas/:slug" element={<TrackDetailPage />} />
+        <Route path="editar-sync/:slug" element={<SyncEditorPage />} />
         <Route path="favoritos" element={<FavoritesPage />} />
         <Route path="criar" element={<CreatorUploadPage />} />
         <Route path="login" element={<LoginPage />} />
@@ -27,6 +30,7 @@ export function App() {
         <Route path="recuperar-senha" element={<ForgotPasswordPage />} />
         <Route path="redefinir-senha" element={<ResetPasswordPage />} />
         <Route path="admin/usuarios" element={<AdminUsersPage />} />
+        <Route path="admin/aprovacoes" element={<AdminApprovalsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

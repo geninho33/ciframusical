@@ -21,8 +21,14 @@ export function AppShell() {
       show: Boolean(user && (hasRole("creator") || hasRole("admin"))),
     },
     {
+      to: "/admin/aprovacoes",
+      label: "Aprovações",
+      end: false,
+      show: Boolean(user && hasRole("admin")),
+    },
+    {
       to: "/admin/usuarios",
-      label: "Admin",
+      label: "Usuários",
       end: false,
       show: Boolean(user && hasRole("admin")),
     },

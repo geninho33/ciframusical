@@ -6,7 +6,6 @@ import {
   fetchJob,
   fetchTaxonomy,
   initUpload,
-  publishTrack,
 } from "../features/catalog/api";
 import type { Taxonomy } from "../features/catalog/types";
 import { useAuthStore } from "../features/auth/authStore";
@@ -115,13 +114,8 @@ export function CreatorUploadPage() {
         }
       }
 
-      setProgress("Publicando…");
-      const published = await publishTrack(track.id, accessToken);
-      navigate(
-        published.sync
-          ? `/praticar/${published.slug}`
-          : `/faixas/${published.slug}`,
-      );
+      setProgress("Abrindo Sync Editor…");
+      navigate(`/editar-sync/${track.slug}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));
       setProgress(null);

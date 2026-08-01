@@ -56,10 +56,76 @@ export function createTrack(
   });
 }
 
-export function publishTrack(trackId: string, token: string) {
-  return apiRequest<TrackDetail>(`/tracks/${trackId}/publish`, {
+export function publishTrack(
+  trackId: string,
+  token: string,
+  body: { syncVersion?: number; changelog?: string } = {},
+) {
+  return apiRequest<{
+    trackId: string;
+    status: string;
+    syncVersion: number;
+    message: string;
+  }>(`/tracks/${trackId}/publish`, {
     method: "POST",
     token,
+    body,
+  });
+}
+
+export function getTrackSync(trackId: string, token: string) {
+  return apiRequest<{
+    trackId: string;
+    version: number;
+    status: string;
+    source: string;
+    formatVersion: string;
+    document: import("../player/types").CifraSyncDocument;
+  }>(`/tracks/${trackId}/sync`, { token });
+}
+
+export function putTrackSync(
+  trackId: string,
+  token: string,
+  document: import("../player/types").CifraSyncDocument,
+) {
+  return apiRequest<{
+    trackId: string;
+    version: number;
+    status: string;
+    checksum: string;
+  }>(`/tracks/${trackId}/sync`, {
+    method: "PUT",
+    token,
+    body: document,
+  });
+}
+
+export function fetchPendingApprovals(token: string) {
+  return apiRequest<{
+    items: Array<{
+      id: string;
+      slug: string;
+      title: string;
+      artist: string | null;
+      syncVersion: number | null;
+      updatedAt: string;
+    }>;
+  }>("/admin/approvals", { token });
+}
+
+export function decideApproval(
+  trackId: string,
+  token: string,
+  body: {
+    decision: "approved" | "rejected" | "changes_requested";
+    notes?: string;
+  },
+) {
+  return apiRequest(`/admin/tracks/${trackId}/approvals`, {
+    method: "POST",
+    token,
+    body,
   });
 }
 

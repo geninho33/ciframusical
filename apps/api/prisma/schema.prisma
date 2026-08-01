@@ -68,6 +68,12 @@ enum JobStatus {
   cancelled
 }
 
+enum ApprovalDecision {
+  approved
+  rejected
+  changes_requested
+}
+
 model User {
   id              String     @id @default(uuid()) @db.Uuid
   email           String     @unique @db.Citext
@@ -89,6 +95,7 @@ model User {
   favorites           Favorite[]
   processingJobs      ProcessingJob[]
   syncVersions        SyncVersion[]
+  syncApprovals       SyncApproval[]
 
   @@unique([oauthProvider, oauthSubject], map: "users_oauth_unique")
   @@map("users")
@@ -273,12 +280,28 @@ model SyncVersion {
   createdBy      String?    @map("created_by") @db.Uuid
   createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  track   Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  creator User? @relation(fields: [createdBy], references: [id])
+  track     Track          @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  creator   User?          @relation(fields: [createdBy], references: [id])
+  approvals SyncApproval[]
 
   @@unique([trackId, version])
   @@index([trackId, isCurrent])
   @@map("sync_versions")
+}
+
+model SyncApproval {
+  id            String           @id @default(uuid()) @db.Uuid
+  syncVersionId String           @map("sync_version_id") @db.Uuid
+  reviewerId    String           @map("reviewer_id") @db.Uuid
+  decision      ApprovalDecision
+  notes         String?
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  syncVersion SyncVersion @relation(fields: [syncVersionId], references: [id], onDelete: Cascade)
+  reviewer    User        @relation(fields: [reviewerId], references: [id])
+
+  @@index([syncVersionId])
+  @@map("sync_approvals")
 }
 
 model ProcessingJob {

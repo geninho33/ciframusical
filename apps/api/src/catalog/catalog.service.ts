@@ -129,28 +129,6 @@ export class CatalogService {
     return this.toDetail(track);
   }
 
-  async publishTrack(trackId: string, user: JwtPayload) {
-    const track = await this.prisma.track.findFirst({
-      where: { id: trackId, deletedAt: null },
-      include: trackInclude,
-    });
-    if (!track) throw new NotFoundException("Track not found");
-    if (track.creatorId !== user.sub && !user.roles.includes("admin")) {
-      throw new ForbiddenException();
-    }
-
-    const updated = await this.prisma.track.update({
-      where: { id: track.id },
-      data: {
-        status: "published",
-        publishedAt: new Date(),
-      },
-      include: trackInclude,
-    });
-
-    return this.toDetail(updated);
-  }
-
   private buildWhere(
     query: ListTracksQueryDto,
     user?: JwtPayload | null,

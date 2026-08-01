@@ -45,11 +45,4 @@ export class CatalogController {
   create(@Body() dto: CreateTrackDto, @Req() req: AuthedRequest) {
     return this.catalog.createTrack(req.user!, dto);
   }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("creator", "admin")
-  @Post("tracks/:id/publish")
-  publish(@Param("id") id: string, @Req() req: AuthedRequest) {
-    return this.catalog.publishTrack(id, req.user!);
-  }
 }

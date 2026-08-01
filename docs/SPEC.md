@@ -949,10 +949,10 @@ Técnicas obrigatórias: `requestAnimationFrame`, binary search em eventos, virt
 **Saída:** upload MP3 → draft editável.
 
 ### Fase 5 — Sync Editor (2 sprints)
-- [ ] Timeline + waveform markers
-- [ ] Drag adjust de eventos / inserção / remoção
-- [ ] Alinhamento de letra
-- [ ] Publish + fluxo de aprovação admin
+- [x] Timeline + waveform markers
+- [x] Drag adjust de eventos / inserção / remoção
+- [x] Alinhamento de letra
+- [x] Publish + fluxo de aprovação admin
 
 **Saída:** criadores publicam com qualidade revisada.
 

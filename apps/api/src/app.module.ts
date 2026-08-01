@@ -8,6 +8,7 @@ import { JobsModule } from "./jobs/jobs.module";
 import { MediaModule } from "./media/media.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { StorageModule } from "./storage/storage.module";
+import { SyncModule } from "./sync/sync.module";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { StorageModule } from "./storage/storage.module";
     MediaModule,
     FavoritesModule,
     JobsModule,
+    SyncModule,
   ],
   controllers: [HealthController],
 })

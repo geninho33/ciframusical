@@ -69,7 +69,12 @@ pnpm dev:web    # http://localhost:5173
 
 ## Status
 
-**Fase 4 — Pipeline de Conversão** implementada (BullMQ → worker Python → `SyncVersion` draft).
+**Fase 5 — Sync Editor** implementada (timeline/waveform, drag de eventos, letra, publish + fila admin).
+
+Rotas úteis:
+- `/editar-sync/:slug` — editor de sync (creator/admin)
+- `/admin/aprovacoes` — fila de aprovação
+- `/praticar/meu-amor-acoustic-playalong` — play-along demo
 
 ```bash
 # terminais
