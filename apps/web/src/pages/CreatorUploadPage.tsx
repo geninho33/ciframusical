@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import {
   completeUpload,
   createTrack,
+  fetchJob,
   fetchTaxonomy,
   initUpload,
   publishTrack,
@@ -12,6 +13,27 @@ import { useAuthStore } from "../features/auth/authStore";
 import { ApiError } from "../shared/api/client";
 import styles from "../features/auth/AuthForm.module.css";
 import pageStyles from "./CreatorUploadPage.module.css";
+
+async function waitForJob(
+  jobId: string,
+  token: string,
+  onProgress: (label: string) => void,
+) {
+  for (let i = 0; i < 120; i++) {
+    const job = await fetchJob(jobId, token);
+    onProgress(`Análise: ${job.stage ?? job.status} (${job.progress}%)`);
+    if (job.status === "completed") return job;
+    if (job.status === "failed") {
+      throw new Error(
+        typeof job.error === "object" && job.error && "message" in job.error
+          ? String((job.error as { message: string }).message)
+          : "Análise falhou",
+      );
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  throw new Error("Timeout aguardando análise");
+}
 
 export function CreatorUploadPage() {
   const navigate = useNavigate();
@@ -86,13 +108,20 @@ export function CreatorUploadPage() {
         });
         if (!put.ok) throw new Error(`Upload S3 falhou (${put.status})`);
 
-        setProgress("Confirmando upload…");
-        await completeUpload(upload.uploadId, accessToken);
+        setProgress("Confirmando upload e enfileirando análise…");
+        const completed = await completeUpload(upload.uploadId, accessToken, true);
+        if (completed.jobId) {
+          await waitForJob(completed.jobId, accessToken, setProgress);
+        }
       }
 
       setProgress("Publicando…");
       const published = await publishTrack(track.id, accessToken);
-      navigate(`/faixas/${published.slug}`);
+      navigate(
+        published.sync
+          ? `/praticar/${published.slug}`
+          : `/faixas/${published.slug}`,
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));
       setProgress(null);
@@ -105,7 +134,7 @@ export function CreatorUploadPage() {
     <section className={styles.page}>
       <h1 className={styles.title}>Nova faixa</h1>
       <p className={styles.subtitle}>
-        Crie metadados, envie MP3 (MinIO) e publique no catálogo.
+        Upload MP3 → pipeline de análise (BPM/tom/acordes) → sync draft → publicar.
       </p>
       <form className={`${styles.form} ${pageStyles.wide}`} onSubmit={onSubmit}>
         <label className={styles.label}>
@@ -158,7 +187,7 @@ export function CreatorUploadPage() {
         </div>
         <div className={pageStyles.row}>
           <label className={styles.label}>
-            Tom
+            Tom (hint)
             <input
               className={styles.input}
               value={originalKey}
@@ -166,7 +195,7 @@ export function CreatorUploadPage() {
             />
           </label>
           <label className={styles.label}>
-            BPM
+            BPM (hint)
             <input
               className={styles.input}
               type="number"
@@ -178,7 +207,7 @@ export function CreatorUploadPage() {
           </label>
         </div>
         <label className={styles.label}>
-          Arquivo MP3 (opcional nesta fase)
+          Arquivo MP3
           <input
             className={styles.input}
             type="file"
@@ -189,7 +218,7 @@ export function CreatorUploadPage() {
         {progress ? <p className={styles.success}>{progress}</p> : null}
         {error ? <p className={styles.error}>{error}</p> : null}
         <button className={styles.submit} type="submit" disabled={loading}>
-          {loading ? "Processando…" : "Criar e publicar"}
+          {loading ? "Processando…" : "Criar, analisar e publicar"}
         </button>
       </form>
     </section>

@@ -1,14 +1,17 @@
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
+  forwardRef,
 } from "@nestjs/common";
 import { randomUUID } from "crypto";
+import type { CompleteUploadDto, InitUploadDto } from "../catalog/dto/catalog.dto";
 import type { JwtPayload } from "../common/types/auth.types";
+import { JobsService } from "../jobs/jobs.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
-import type { CompleteUploadDto, InitUploadDto } from "../catalog/dto/catalog.dto";
 
 const ALLOWED_MIME = new Set([
   "audio/mpeg",
@@ -25,6 +28,8 @@ export class MediaService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    @Inject(forwardRef(() => JobsService))
+    private readonly jobs: JobsService,
   ) {}
 
   async initUpload(user: JwtPayload, dto: InitUploadDto) {
@@ -75,17 +80,14 @@ export class MediaService {
   async completeUpload(
     user: JwtPayload,
     uploadId: string,
-    _dto: CompleteUploadDto,
+    dto: CompleteUploadDto,
   ) {
     const media = await this.prisma.mediaFile.findUnique({
       where: { id: uploadId },
       include: { track: true },
     });
     if (!media) throw new NotFoundException("Upload not found");
-    if (
-      media.track.creatorId !== user.sub &&
-      !user.roles.includes("admin")
-    ) {
+    if (media.track.creatorId !== user.sub && !user.roles.includes("admin")) {
       throw new ForbiddenException();
     }
 
@@ -97,21 +99,20 @@ export class MediaService {
       },
     });
 
-    // Placeholder duration until analysis pipeline (Phase 4)
-    if (!media.track.durationMs) {
-      await this.prisma.track.update({
-        where: { id: media.trackId },
-        data: { durationMs: 180_000 },
-      });
+    let analyze: { jobId: string; status: string; trackId: string } | null = null;
+    if (dto.autoAnalyze !== false) {
+      analyze = await this.jobs.enqueueAnalyze(user, media.trackId);
     }
 
     return {
       mediaFileId: updated.id,
       trackId: updated.trackId,
       status: updated.uploadStatus,
-      autoAnalyzeQueued: false,
-      message:
-        "Upload confirmed. Análise automática chega na Fase 4 — use publish quando quiser.",
+      autoAnalyzeQueued: Boolean(analyze),
+      jobId: analyze?.jobId ?? null,
+      message: analyze
+        ? "Upload confirmed. Análise enfileirada."
+        : "Upload confirmed.",
     };
   }
 }

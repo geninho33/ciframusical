@@ -79,12 +79,43 @@ export function initUpload(
   }>("/media/uploads", { method: "POST", token, body });
 }
 
-export function completeUpload(uploadId: string, token: string) {
-  return apiRequest(`/media/uploads/${uploadId}/complete`, {
+export function completeUpload(
+  uploadId: string,
+  token: string,
+  autoAnalyze = true,
+) {
+  return apiRequest<{
+    mediaFileId: string;
+    trackId: string;
+    status: string;
+    autoAnalyzeQueued: boolean;
+    jobId: string | null;
+    message: string;
+  }>(`/media/uploads/${uploadId}/complete`, {
     method: "POST",
     token,
-    body: { autoAnalyze: false },
+    body: { autoAnalyze },
   });
+}
+
+export function analyzeTrack(trackId: string, token: string) {
+  return apiRequest<{ jobId: string; status: string; trackId: string }>(
+    `/tracks/${trackId}/analyze`,
+    { method: "POST", token, body: {} },
+  );
+}
+
+export function fetchJob(jobId: string, token: string) {
+  return apiRequest<{
+    jobId: string;
+    status: string;
+    progress: number;
+    stage: string | null;
+    etaSeconds: number | null;
+    error: unknown;
+    result: unknown;
+    trackId: string;
+  }>(`/jobs/${jobId}`, { token });
 }
 
 export function fetchFavorites(token: string) {

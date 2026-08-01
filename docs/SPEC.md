@@ -941,10 +941,10 @@ Técnicas obrigatórias: `requestAnimationFrame`, binary search em eventos, virt
 **Saída:** demo interna “praticar com sync perfeito”.
 
 ### Fase 4 — Pipeline de Conversão (2–3 sprints)
-- [ ] Worker Python: BPM, key, chroma/chords
-- [ ] Geração de sync draft + confidence scores
-- [ ] Job status API + UI de progresso
-- [ ] Persistência de versões
+- [x] Worker Python: BPM, key, chroma/chords
+- [x] Geração de sync draft + confidence scores
+- [x] Job status API + UI de progresso
+- [x] Persistência de versões
 
 **Saída:** upload MP3 → draft editável.
 

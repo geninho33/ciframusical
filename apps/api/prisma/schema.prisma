@@ -42,6 +42,32 @@ enum MediaUploadStatus {
   aborted
 }
 
+enum SyncSource {
+  auto
+  manual
+  hybrid
+}
+
+enum SyncStatus {
+  draft
+  published
+  superseded
+}
+
+enum JobType {
+  analyze_audio
+  regenerate_sync
+  normalize_audio
+}
+
+enum JobStatus {
+  queued
+  running
+  completed
+  failed
+  cancelled
+}
+
 model User {
   id              String     @id @default(uuid()) @db.Uuid
   email           String     @unique @db.Citext
@@ -61,6 +87,8 @@ model User {
   passwordResetTokens PasswordResetToken[]
   tracks              Track[]              @relation("TrackCreator")
   favorites           Favorite[]
+  processingJobs      ProcessingJob[]
+  syncVersions        SyncVersion[]
 
   @@unique([oauthProvider, oauthSubject], map: "users_oauth_unique")
   @@map("users")
@@ -168,8 +196,10 @@ model Track {
   artist     Artist?      @relation(fields: [artistId], references: [id])
   genres     TrackGenre[]
   styles     TrackStyle[]
-  mediaFiles MediaFile[]
-  favorites  Favorite[]
+  mediaFiles      MediaFile[]
+  favorites       Favorite[]
+  syncVersions    SyncVersion[]
+  processingJobs  ProcessingJob[]
 
   @@index([status])
   @@index([bpm])
@@ -228,4 +258,47 @@ model MediaFile {
 
   @@index([trackId])
   @@map("media_files")
+}
+
+model SyncVersion {
+  id             String     @id @default(uuid()) @db.Uuid
+  trackId        String     @map("track_id") @db.Uuid
+  version        Int
+  storageKey     String     @unique @map("storage_key")
+  source         SyncSource @default(auto)
+  status         SyncStatus @default(draft)
+  isCurrent      Boolean    @default(false) @map("is_current")
+  checksumSha256 String?    @map("checksum_sha256") @db.Char(64)
+  formatVersion  String     @default("1.0.0") @map("format_version") @db.VarChar(16)
+  createdBy      String?    @map("created_by") @db.Uuid
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  track   Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  creator User? @relation(fields: [createdBy], references: [id])
+
+  @@unique([trackId, version])
+  @@index([trackId, isCurrent])
+  @@map("sync_versions")
+}
+
+model ProcessingJob {
+  id          String    @id @default(uuid()) @db.Uuid
+  trackId     String    @map("track_id") @db.Uuid
+  requestedBy String    @map("requested_by") @db.Uuid
+  jobType     JobType   @map("job_type")
+  status      JobStatus @default(queued)
+  progress    Int       @default(0)
+  stage       String?   @db.VarChar(64)
+  result      Json?
+  error       Json?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  startedAt   DateTime? @map("started_at") @db.Timestamptz(6)
+  finishedAt  DateTime? @map("finished_at") @db.Timestamptz(6)
+
+  track     Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  requester User  @relation(fields: [requestedBy], references: [id])
+
+  @@index([trackId, createdAt])
+  @@index([status])
+  @@map("processing_jobs")
 }

@@ -285,20 +285,43 @@ export class CatalogService {
       };
     }
 
-    const fixtureSyncUrl = fixtureSyncPath(track.slug);
+    const currentSync = await this.prisma.syncVersion.findFirst({
+      where: { trackId: track.id, isCurrent: true },
+      orderBy: { version: "desc" },
+    });
+
+    let sync: {
+      version: number;
+      url: string;
+      formatVersion: string;
+    } | null = null;
+
+    if (currentSync) {
+      const signedSync = await this.storage.createPresignedGetUrl({
+        key: currentSync.storageKey,
+      });
+      sync = {
+        version: currentSync.version,
+        url: signedSync.url,
+        formatVersion: currentSync.formatVersion,
+      };
+    } else {
+      const fixtureSyncUrl = fixtureSyncPath(track.slug);
+      if (fixtureSyncUrl) {
+        sync = {
+          version: 1,
+          url: fixtureSyncUrl,
+          formatVersion: "1.0.0",
+        };
+      }
+    }
 
     return {
       ...base,
       timeSignature: track.timeSignature,
       lyricsPlain: track.lyricsPlain,
       audio,
-      sync: fixtureSyncUrl
-        ? {
-            version: 1,
-            url: fixtureSyncUrl,
-            formatVersion: "1.0.0",
-          }
-        : null,
+      sync,
       chordInstrumentDefault: "guitar" as const,
     };
   }

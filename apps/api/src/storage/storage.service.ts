@@ -90,6 +90,25 @@ export class StorageService implements OnModuleInit {
     };
   }
 
+  async putObject(params: {
+    key: string;
+    body: Buffer | string;
+    mimeType: string;
+  }) {
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: params.key,
+        Body: params.body,
+        ContentType: params.mimeType,
+      }),
+    );
+  }
+
+  getBucket() {
+    return this.bucket;
+  }
+
   private rewriteUrlForBrowser(url: string) {
     const endpoint = this.config.get<string>("S3_ENDPOINT") ?? "http://localhost:9000";
     if (this.publicEndpoint === endpoint) return url;

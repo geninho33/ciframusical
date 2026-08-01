@@ -69,7 +69,15 @@ pnpm dev:web    # http://localhost:5173
 
 ## Status
 
-**Fase 3 — Player Play-Along** implementada. Demo: `/praticar/meu-amor-acoustic-playalong` (fixture de sync + clock Tone.js).
+**Fase 4 — Pipeline de Conversão** implementada (BullMQ → worker Python → `SyncVersion` draft).
+
+```bash
+# terminais
+pnpm docker:up && pnpm db:setup
+pnpm dev:api
+pnpm dev:web
+cd services/audio-worker && .venv\Scripts\activate && uvicorn app.main:app --port 8001
+```
 
 ## Licença
 

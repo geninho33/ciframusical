@@ -4,6 +4,7 @@ import { AuthModule } from "./auth/auth.module";
 import { CatalogModule } from "./catalog/catalog.module";
 import { FavoritesModule } from "./favorites/favorites.module";
 import { HealthController } from "./health/health.controller";
+import { JobsModule } from "./jobs/jobs.module";
 import { MediaModule } from "./media/media.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { StorageModule } from "./storage/storage.module";
@@ -20,6 +21,7 @@ import { StorageModule } from "./storage/storage.module";
     CatalogModule,
     MediaModule,
     FavoritesModule,
+    JobsModule,
   ],
   controllers: [HealthController],
 })
