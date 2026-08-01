@@ -13,6 +13,13 @@ export function AppShell() {
   const links = [
     { to: "/", label: "Início", end: true, show: true },
     { to: "/catalogo", label: "Catálogo", end: false, show: true },
+    { to: "/favoritos", label: "Favoritos", end: false, show: Boolean(user) },
+    {
+      to: "/criar",
+      label: "Criar",
+      end: false,
+      show: Boolean(user && (hasRole("creator") || hasRole("admin"))),
+    },
     {
       to: "/admin/usuarios",
       label: "Admin",

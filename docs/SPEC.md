@@ -923,20 +923,20 @@ Técnicas obrigatórias: `requestAnimationFrame`, binary search em eventos, virt
 **Saída:** `RF-A*` atendidos; seeds de admin.
 
 ### Fase 2 — Catálogo & Storage (1–2 sprints)
-- [ ] CRUD tracks (draft), artistas, gêneros, estilos
-- [ ] Busca + filtros
-- [ ] Presigned upload para MinIO/S3
-- [ ] Favoritos
+- [x] CRUD tracks (draft), artistas, gêneros, estilos
+- [x] Busca + filtros
+- [x] Presigned upload para MinIO/S3
+- [x] Favoritos
 
 **Saída:** navegação de catálogo com áudio placeholder.
 
 ### Fase 3 — Player Play-Along (2 sprints) — *core value*
-- [ ] Web Audio / Tone.js transport
-- [ ] Carregar `CifraSyncDocument` + highlight sync
-- [ ] Auto-scroll 60fps
-- [ ] Transpose, speed (time-stretch), Loop A/B
-- [ ] Chord diagrams básicos
-- [ ] Fixture tracks manuais (sem worker)
+- [x] Web Audio / Tone.js transport
+- [x] Carregar `CifraSyncDocument` + highlight sync
+- [x] Auto-scroll 60fps
+- [x] Transpose, speed (time-stretch), Loop A/B
+- [x] Chord diagrams básicos
+- [x] Fixture tracks manuais (sem worker)
 
 **Saída:** demo interna “praticar com sync perfeito”.
 

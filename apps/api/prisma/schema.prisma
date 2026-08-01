@@ -13,6 +13,35 @@ enum UserStatus {
   deleted
 }
 
+enum TrackStatus {
+  draft
+  processing
+  needs_review
+  pending_approval
+  published
+  rejected
+  archived
+}
+
+enum DifficultyLevel {
+  beginner
+  intermediate
+  advanced
+}
+
+enum MediaKind {
+  source_audio
+  preview_audio
+  waveform_peaks
+  cover_image
+}
+
+enum MediaUploadStatus {
+  pending
+  completed
+  aborted
+}
+
 model User {
   id              String     @id @default(uuid()) @db.Uuid
   email           String     @unique @db.Citext
@@ -30,6 +59,8 @@ model User {
   roles               UserRole[]
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
+  tracks              Track[]              @relation("TrackCreator")
+  favorites           Favorite[]
 
   @@unique([oauthProvider, oauthSubject], map: "users_oauth_unique")
   @@map("users")
@@ -81,4 +112,120 @@ model PasswordResetToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
+}
+
+model Artist {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(160)
+  slug      String   @unique @db.VarChar(180)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tracks Track[]
+
+  @@map("artists")
+}
+
+model Genre {
+  id   Int    @id @default(autoincrement()) @db.SmallInt
+  slug String @unique @db.VarChar(64)
+  name String @db.VarChar(80)
+
+  tracks TrackGenre[]
+
+  @@map("genres")
+}
+
+model Style {
+  id   Int    @id @default(autoincrement()) @db.SmallInt
+  slug String @unique @db.VarChar(64)
+  name String @db.VarChar(80)
+
+  tracks TrackStyle[]
+
+  @@map("styles")
+}
+
+model Track {
+  id              String          @id @default(uuid()) @db.Uuid
+  creatorId       String          @map("creator_id") @db.Uuid
+  artistId        String?         @map("artist_id") @db.Uuid
+  title           String          @db.VarChar(200)
+  slug            String          @unique @db.VarChar(220)
+  originalKey     String?         @map("original_key") @db.VarChar(8)
+  bpm             Int?
+  timeSignature   String          @default("4/4") @map("time_signature") @db.VarChar(8)
+  difficulty      DifficultyLevel @default(intermediate)
+  status          TrackStatus     @default(draft)
+  durationMs      Int?            @map("duration_ms")
+  lyricsPlain     String?         @map("lyrics_plain")
+  coverStorageKey String?         @map("cover_storage_key")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  publishedAt     DateTime?       @map("published_at") @db.Timestamptz(6)
+  deletedAt       DateTime?       @map("deleted_at") @db.Timestamptz(6)
+
+  creator    User         @relation("TrackCreator", fields: [creatorId], references: [id])
+  artist     Artist?      @relation(fields: [artistId], references: [id])
+  genres     TrackGenre[]
+  styles     TrackStyle[]
+  mediaFiles MediaFile[]
+  favorites  Favorite[]
+
+  @@index([status])
+  @@index([bpm])
+  @@index([originalKey])
+  @@index([creatorId])
+  @@map("tracks")
+}
+
+model TrackGenre {
+  trackId String @map("track_id") @db.Uuid
+  genreId Int    @map("genre_id") @db.SmallInt
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([trackId, genreId])
+  @@map("track_genres")
+}
+
+model TrackStyle {
+  trackId String @map("track_id") @db.Uuid
+  styleId Int    @map("style_id") @db.SmallInt
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  style Style @relation(fields: [styleId], references: [id], onDelete: Cascade)
+
+  @@id([trackId, styleId])
+  @@map("track_styles")
+}
+
+model Favorite {
+  userId    String   @map("user_id") @db.Uuid
+  trackId   String   @map("track_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@id([userId, trackId])
+  @@map("favorites")
+}
+
+model MediaFile {
+  id             String            @id @default(uuid()) @db.Uuid
+  trackId        String            @map("track_id") @db.Uuid
+  kind           MediaKind
+  storageKey     String            @unique @map("storage_key")
+  mimeType       String            @map("mime_type") @db.VarChar(128)
+  sizeBytes      BigInt            @map("size_bytes")
+  checksumSha256 String?           @map("checksum_sha256") @db.Char(64)
+  uploadStatus   MediaUploadStatus @default(pending) @map("upload_status")
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt    DateTime?         @map("completed_at") @db.Timestamptz(6)
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([trackId])
+  @@map("media_files")
 }

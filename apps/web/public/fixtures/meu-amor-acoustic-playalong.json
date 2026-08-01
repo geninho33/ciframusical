@@ -1,0 +1,147 @@
+{
+  "formatVersion": "1.0.0",
+  "track": {
+    "title": "Meu Amor",
+    "artist": "Banda Exemplo",
+    "originalKey": "G",
+    "bpm": 92,
+    "timeSignature": "4/4",
+    "durationSec": 48,
+    "tuning": ["E", "A", "D", "G", "B", "E"]
+  },
+  "meta": {
+    "source": "manual",
+    "generatedAt": "2026-07-31T21:00:00Z",
+    "generator": "cifratrack-fixture/phase-3"
+  },
+  "sections": [
+    { "id": "s1", "name": "Intro", "startSec": 0, "endSec": 8 },
+    { "id": "s2", "name": "Verse", "startSec": 8, "endSec": 24 },
+    { "id": "s3", "name": "Chorus", "startSec": 24, "endSec": 40 },
+    { "id": "s4", "name": "Outro", "startSec": 40, "endSec": 48 }
+  ],
+  "events": [
+    {
+      "id": "e1",
+      "t": 0,
+      "tEnd": 2,
+      "chord": { "symbol": "G", "root": "G", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": null,
+      "sectionId": "s1"
+    },
+    {
+      "id": "e2",
+      "t": 2,
+      "tEnd": 4,
+      "chord": { "symbol": "Em", "root": "E", "quality": "min", "bass": null, "extensions": [] },
+      "lyricLine": null,
+      "sectionId": "s1"
+    },
+    {
+      "id": "e3",
+      "t": 4,
+      "tEnd": 6,
+      "chord": { "symbol": "C", "root": "C", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": null,
+      "sectionId": "s1"
+    },
+    {
+      "id": "e4",
+      "t": 6,
+      "tEnd": 8,
+      "chord": { "symbol": "D", "root": "D", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": null,
+      "sectionId": "s1"
+    },
+    {
+      "id": "e5",
+      "t": 8,
+      "tEnd": 12,
+      "chord": { "symbol": "G", "root": "G", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": "Sob a luz da manhã",
+      "sectionId": "s2"
+    },
+    {
+      "id": "e6",
+      "t": 12,
+      "tEnd": 16,
+      "chord": { "symbol": "Em", "root": "E", "quality": "min", "bass": null, "extensions": [] },
+      "lyricLine": "eu penso em você",
+      "sectionId": "s2"
+    },
+    {
+      "id": "e7",
+      "t": 16,
+      "tEnd": 20,
+      "chord": { "symbol": "C", "root": "C", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": "e o tempo passa",
+      "sectionId": "s2"
+    },
+    {
+      "id": "e8",
+      "t": 20,
+      "tEnd": 24,
+      "chord": { "symbol": "D", "root": "D", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": "sem te esquecer",
+      "sectionId": "s2"
+    },
+    {
+      "id": "e9",
+      "t": 24,
+      "tEnd": 28,
+      "chord": { "symbol": "C", "root": "C", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": "Meu amor, vem cá",
+      "sectionId": "s3"
+    },
+    {
+      "id": "e10",
+      "t": 28,
+      "tEnd": 32,
+      "chord": { "symbol": "G", "root": "G", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": "ficar um pouco mais",
+      "sectionId": "s3"
+    },
+    {
+      "id": "e11",
+      "t": 32,
+      "tEnd": 36,
+      "chord": { "symbol": "Am", "root": "A", "quality": "min", "bass": null, "extensions": [] },
+      "lyricLine": "nessa canção",
+      "sectionId": "s3"
+    },
+    {
+      "id": "e12",
+      "t": 36,
+      "tEnd": 40,
+      "chord": { "symbol": "D", "root": "D", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": "que eu fiz pra nós",
+      "sectionId": "s3"
+    },
+    {
+      "id": "e13",
+      "t": 40,
+      "tEnd": 44,
+      "chord": { "symbol": "G", "root": "G", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": null,
+      "sectionId": "s4"
+    },
+    {
+      "id": "e14",
+      "t": 44,
+      "tEnd": 48,
+      "chord": { "symbol": "D", "root": "D", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": null,
+      "sectionId": "s4"
+    }
+  ],
+  "lyrics": [
+    { "id": "l1", "t": 8, "tEnd": 12, "text": "Sob a luz da manhã", "sectionId": "s2" },
+    { "id": "l2", "t": 12, "tEnd": 16, "text": "eu penso em você", "sectionId": "s2" },
+    { "id": "l3", "t": 16, "tEnd": 20, "text": "e o tempo passa", "sectionId": "s2" },
+    { "id": "l4", "t": 20, "tEnd": 24, "text": "sem te esquecer", "sectionId": "s2" },
+    { "id": "l5", "t": 24, "tEnd": 28, "text": "Meu amor, vem cá", "sectionId": "s3" },
+    { "id": "l6", "t": 28, "tEnd": 32, "text": "ficar um pouco mais", "sectionId": "s3" },
+    { "id": "l7", "t": 32, "tEnd": 36, "text": "nessa canção", "sectionId": "s3" },
+    { "id": "l8", "t": 36, "tEnd": 40, "text": "que eu fiz pra nós", "sectionId": "s3" }
+  ]
+}

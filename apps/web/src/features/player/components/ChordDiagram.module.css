@@ -1,0 +1,40 @@
+.box {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  padding: var(--space-3);
+  min-width: 140px;
+}
+
+.symbol {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--chord-active);
+}
+
+.hint {
+  margin: var(--space-2) 0 0;
+  text-align: center;
+  color: var(--text-subtle);
+  font-size: 0.8rem;
+}
+
+.svg {
+  width: 100%;
+  color: var(--chord-idle);
+  margin-top: var(--space-2);
+}
+
+.fretNum {
+  fill: var(--text-muted);
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+
+.mute {
+  fill: var(--text-muted);
+  font-size: 12px;
+}

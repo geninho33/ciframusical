@@ -45,10 +45,12 @@ cp .env apps/api/.env
 
 # 2) Infra (Docker Desktop ligado)
 pnpm docker:up
+# Postgres do Compose usa a porta host 5433 (evita conflito com Postgres local)
 
 # 3) Banco + seed admin
 pnpm db:setup
 # admin@cifratrack.local / Admin123!
+# demo track: meu-amor-acoustic-playalong
 
 # 4) Apps
 pnpm dev:api    # http://localhost:3000/v1/health
@@ -67,7 +69,7 @@ pnpm dev:web    # http://localhost:5173
 
 ## Status
 
-**Fase 1 — Identity & RBAC** implementada (JWT, roles, UI de auth). OAuth Google fica como stub até configurar credenciais.
+**Fase 3 — Player Play-Along** implementada. Demo: `/praticar/meu-amor-acoustic-playalong` (fixture de sync + clock Tone.js).
 
 ## Licença
 
