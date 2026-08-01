@@ -13,12 +13,13 @@ export function ChordScrollViewport({ doc, activeEventId, autoScroll }: Props) {
   const activeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!autoScroll || !activeRef.current || !containerRef.current) return;
-    const container = containerRef.current;
-    const el = activeRef.current;
-    const top =
-      el.offsetTop - container.clientHeight * 0.35 + el.clientHeight / 2;
-    container.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    if (!autoScroll || !activeRef.current) return;
+    // Prefer native scrollIntoView to avoid layout thrashing on long lists
+    activeRef.current.scrollIntoView({
+      block: "center",
+      inline: "nearest",
+      behavior: "smooth",
+    });
   }, [activeEventId, autoScroll]);
 
   const sections = doc.sections.length

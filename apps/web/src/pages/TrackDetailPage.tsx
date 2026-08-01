@@ -5,6 +5,7 @@ import {
   fetchTrack,
   publishTrack,
   removeFavorite,
+  reportTrack,
 } from "../features/catalog/api";
 import type { TrackDetail } from "../features/catalog/types";
 import { useAuthStore } from "../features/auth/authStore";
@@ -18,6 +19,7 @@ export function TrackDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [favBusy, setFavBusy] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [reportMsg, setReportMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +69,19 @@ export function TrackDetailPage() {
       setTrack(refreshed);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Falha ao publicar");
+    }
+  }
+
+  async function onReport() {
+    if (!track || !accessToken) return;
+    try {
+      const res = await reportTrack(track.id, accessToken, {
+        reason: "incorrect_sync",
+        details: "Reportado pelo detalhe da faixa",
+      });
+      setReportMsg(res.message);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Falha ao denunciar");
     }
   }
 
@@ -134,6 +149,11 @@ export function TrackDetailPage() {
               Publicar
             </button>
           ) : null}
+          {user && track.status === "published" ? (
+            <button type="button" className={styles.secondary} onClick={() => void onReport()}>
+              Denunciar
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -155,6 +175,7 @@ export function TrackDetailPage() {
         )}
       </div>
 
+      {reportMsg ? <p className={styles.error} style={{ color: "var(--accent)" }}>{reportMsg}</p> : null}
       {error ? <p className={styles.error}>{error}</p> : null}
     </section>
   );

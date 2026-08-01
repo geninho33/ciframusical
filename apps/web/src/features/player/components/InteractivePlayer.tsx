@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { CifraSyncDocument } from "../types";
+import { handlePlayerKeydown } from "../playerKeyboard";
 import { selectDisplayDoc, usePlayerStore } from "../playerStore";
 import { ChordDiagram } from "./ChordDiagram";
 import { ChordScrollViewport } from "./ChordScrollViewport";
@@ -27,11 +28,20 @@ export function InteractivePlayer({
   const displayKey = usePlayerStore((s) => s.displayKey);
   const playbackRate = usePlayerStore((s) => s.playbackRate);
   const autoScroll = usePlayerStore((s) => s.autoScroll);
+  const currentTime = usePlayerStore((s) => s.currentTime);
+  const duration = usePlayerStore((s) => s.duration);
+  const transposeSemitones = usePlayerStore((s) => s.transposeSemitones);
   const load = usePlayerStore((s) => s.load);
   const tick = usePlayerStore((s) => s.tick);
   const toggle = usePlayerStore((s) => s.toggle);
+  const seek = usePlayerStore((s) => s.seek);
+  const setTranspose = usePlayerStore((s) => s.setTranspose);
+  const setPlaybackRate = usePlayerStore((s) => s.setPlaybackRate);
+  const toggleLoop = usePlayerStore((s) => s.toggleLoop);
+  const clearLoop = usePlayerStore((s) => s.clearLoop);
   const dispose = usePlayerStore((s) => s.dispose);
   const displayDoc = usePlayerStore(selectDisplayDoc);
+  const rootRef = useRef<HTMLDivElement>(null);
   const tickRef = useRef(tick);
   tickRef.current = tick;
 
@@ -54,19 +64,58 @@ export function InteractivePlayer({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.code === "Space" && !(e.target instanceof HTMLInputElement)) {
-        e.preventDefault();
-        void toggle();
-      }
+      handlePlayerKeydown(e, {
+        toggle,
+        seekBy: (delta) => {
+          const next = Math.min(duration, Math.max(0, currentTime + delta));
+          seek(next);
+        },
+        seekToStart: () => seek(0),
+        seekToEnd: () => seek(duration),
+        nudgeTranspose: (delta) =>
+          setTranspose(Math.min(6, Math.max(-6, transposeSemitones + delta))),
+        nudgeRate: (delta) =>
+          setPlaybackRate(
+            Math.round(Math.min(1.5, Math.max(0.5, playbackRate + delta)) * 100) /
+              100,
+          ),
+        toggleLoop,
+        clearLoop,
+      });
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [toggle]);
+  }, [
+    toggle,
+    seek,
+    currentTime,
+    duration,
+    setTranspose,
+    transposeSemitones,
+    setPlaybackRate,
+    playbackRate,
+    toggleLoop,
+    clearLoop,
+  ]);
+
+  useEffect(() => {
+    rootRef.current?.focus({ preventScroll: true });
+  }, [trackId]);
 
   const doc = displayDoc ?? syncDoc;
 
   return (
-    <div className={styles.root}>
+    <div
+      ref={rootRef}
+      className={styles.root}
+      tabIndex={0}
+      role="application"
+      aria-label={`Play-along ${title}`}
+    >
+      <p className={styles.srOnly} id="player-shortcuts">
+        Atalhos: Espaço play/pause, setas seek, Home/End, J/K, L loop, +/− tom,
+        [ ] velocidade, Esc limpa loop.
+      </p>
       <header className={styles.hud}>
         <div>
           <p className={styles.artist}>{artist}</p>
@@ -88,6 +137,14 @@ export function InteractivePlayer({
         </dl>
       </header>
 
+      <div
+        className={styles.live}
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        Acorde atual: {activeEvent?.chord.symbol ?? "—"}
+      </div>
+
       <div className={styles.body}>
         <ChordScrollViewport
           doc={doc}
@@ -101,6 +158,9 @@ export function InteractivePlayer({
               Fixture sem MP3 — o clock Tone.js guia a cifra (play-along).
             </p>
           ) : null}
+          <p className={styles.hint} aria-describedby="player-shortcuts">
+            Teclado: Espaço · ←/→ · +/− · [ ] · L
+          </p>
         </aside>
       </div>
 

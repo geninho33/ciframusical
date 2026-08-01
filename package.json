@@ -17,7 +17,8 @@
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
     "db:setup": "pnpm --filter @cifratrack/api db:setup",
-    "db:seed": "pnpm --filter @cifratrack/api prisma:seed"
+    "db:seed": "pnpm --filter @cifratrack/api prisma:seed",
+    "test:e2e": "node scripts/e2e-critical.mjs"
   },
   "devDependencies": {
     "turbo": "^2.5.4",

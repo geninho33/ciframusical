@@ -957,11 +957,11 @@ Técnicas obrigatórias: `requestAnimationFrame`, binary search em eventos, virt
 **Saída:** criadores publicam com qualidade revisada.
 
 ### Fase 6 — Hardening & Launch (1–2 sprints)
-- [ ] Moderação, métricas admin
-- [ ] Observabilidade (OpenTelemetry, Sentry)
-- [ ] Testes e2e críticos (auth, upload, player sync)
-- [ ] Performance pass + acessibilidade teclado no player
-- [ ] Beta fechado
+- [x] Moderação, métricas admin
+- [x] Observabilidade (OpenTelemetry, Sentry)
+- [x] Testes e2e críticos (auth, upload, player sync)
+- [x] Performance pass + acessibilidade teclado no player
+- [x] Beta fechado
 
 ### Critério de Done global (MVP)
 

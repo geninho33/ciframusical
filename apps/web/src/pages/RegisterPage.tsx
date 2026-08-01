@@ -4,12 +4,15 @@ import { useAuthStore } from "../features/auth/authStore";
 import styles from "../features/auth/AuthForm.module.css";
 import { ApiError } from "../shared/api/client";
 
+const betaMode = import.meta.env.VITE_BETA_MODE === "true";
+
 export function RegisterPage() {
   const navigate = useNavigate();
   const { user, register } = useAuthStore();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +23,7 @@ export function RegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      await register(email, password, displayName);
+      await register(email, password, displayName, betaMode ? inviteCode : undefined);
       navigate("/");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Falha no cadastro");
@@ -32,7 +35,11 @@ export function RegisterPage() {
   return (
     <section className={styles.page}>
       <h1 className={styles.title}>Criar conta</h1>
-      <p className={styles.subtitle}>Comece como estudante. Um admin pode promover creators.</p>
+      <p className={styles.subtitle}>
+        {betaMode
+          ? "Beta fechado — cadastro exige código de convite."
+          : "Comece como estudante. Um admin pode promover creators."}
+      </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label className={styles.label}>
           Nome
@@ -67,6 +74,19 @@ export function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </label>
+        {betaMode ? (
+          <label className={styles.label}>
+            Código de convite
+            <input
+              className={styles.input}
+              required
+              minLength={4}
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              autoComplete="one-time-code"
+            />
+          </label>
+        ) : null}
         {error ? <p className={styles.error}>{error}</p> : null}
         <button className={styles.submit} type="submit" disabled={loading}>
           {loading ? "Criando…" : "Cadastrar"}

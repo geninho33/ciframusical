@@ -11,7 +11,12 @@ type AuthState = {
   clearSession: () => void;
   hasRole: (role: RoleCode) => boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    displayName: string,
+    inviteCode?: string,
+  ) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<boolean>;
   loadMe: () => Promise<void>;
@@ -44,10 +49,15 @@ export const useAuthStore = create<AuthState>()(
         get().setSession(payload);
       },
 
-      register: async (email, password, displayName) => {
+      register: async (email, password, displayName, inviteCode) => {
         const payload = await apiRequest<AuthResponse>("/auth/register", {
           method: "POST",
-          body: { email, password, displayName },
+          body: {
+            email,
+            password,
+            displayName,
+            ...(inviteCode ? { inviteCode } : {}),
+          },
         });
         get().setSession(payload);
       },

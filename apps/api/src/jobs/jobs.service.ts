@@ -11,6 +11,8 @@ import { createHash } from "crypto";
 import { Queue, Worker, type Job } from "bullmq";
 import IORedis from "ioredis";
 import type { JwtPayload } from "../common/types/auth.types";
+import { MetricsService } from "../observability/metrics.service";
+import { captureException } from "../observability/sentry";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 
@@ -34,6 +36,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly storage: StorageService,
+    private readonly metrics: MetricsService,
   ) {}
 
   async onModuleInit() {
@@ -121,10 +124,12 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       void this.dispatchToPythonWorker({ data: payload } as Job<AnalyzeJobPayload>);
     }
 
+    this.metrics.incr("cifratrack_analyze_jobs_queued_total");
     return {
       jobId: job.id,
       status: job.status,
       trackId: track.id,
+      traceId: job.id,
     };
   }
 
@@ -151,6 +156,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       error: job.error,
       result: job.result,
       trackId: job.trackId,
+      traceId: job.id,
     };
   }
 
@@ -243,7 +249,8 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       }),
     ]);
 
-    return { ok: true, syncVersion: version, storageKey };
+    this.metrics.incr("cifratrack_analyze_jobs_completed_total");
+    return { ok: true, syncVersion: version, storageKey, traceId: jobId };
   }
 
   async failJob(jobId: string, error: { message: string; detail?: string }) {
@@ -268,7 +275,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       }),
     ]);
 
-    return { ok: true };
+    this.metrics.incr("cifratrack_analyze_jobs_failed_total");
+    captureException(error, { jobId, trackId: job.trackId, traceId: jobId });
+    return { ok: true, traceId: jobId };
   }
 
   private async dispatchToPythonWorker(job: Job<AnalyzeJobPayload> | { data: AnalyzeJobPayload }) {

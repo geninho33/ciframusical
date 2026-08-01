@@ -7,8 +7,9 @@ export class HealthController {
     return {
       status: "ok",
       service: "cifratrack-api",
-      version: "0.1.0",
-      phase: 0,
+      version: "0.6.0",
+      phase: 6,
+      beta: (process.env.BETA_MODE ?? "false") === "true",
     };
   }
 }

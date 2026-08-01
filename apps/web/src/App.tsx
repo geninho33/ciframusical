@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
 import { AdminApprovalsPage } from "./pages/AdminApprovalsPage";
+import { AdminMetricsPage } from "./pages/AdminMetricsPage";
+import { AdminReportsPage } from "./pages/AdminReportsPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { CatalogPage } from "./pages/CatalogPage";
 import { CreatorUploadPage } from "./pages/CreatorUploadPage";
@@ -31,6 +33,8 @@ export function App() {
         <Route path="redefinir-senha" element={<ResetPasswordPage />} />
         <Route path="admin/usuarios" element={<AdminUsersPage />} />
         <Route path="admin/aprovacoes" element={<AdminApprovalsPage />} />
+        <Route path="admin/metricas" element={<AdminMetricsPage />} />
+        <Route path="admin/denuncias" element={<AdminReportsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

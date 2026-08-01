@@ -29,6 +29,8 @@
   padding: var(--space-3) var(--space-4);
   border-left: 3px solid transparent;
   border-radius: var(--radius-sm);
+  content-visibility: auto;
+  contain-intrinsic-size: 0 96px;
   transition:
     background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out),

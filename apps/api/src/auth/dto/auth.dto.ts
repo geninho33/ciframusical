@@ -3,6 +3,7 @@ import {
   IsArray,
   IsEmail,
   IsIn,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -25,6 +26,13 @@ export class RegisterDto {
   @MinLength(2)
   @MaxLength(80)
   displayName!: string;
+
+  /** Required when BETA_MODE=true */
+  @IsOptional()
+  @IsString()
+  @MinLength(4)
+  @MaxLength(64)
+  inviteCode?: string;
 }
 
 export class LoginDto {

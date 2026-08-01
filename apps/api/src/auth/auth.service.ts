@@ -39,6 +39,8 @@ export class AuthService {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) throw new ConflictException("Email already registered");
 
+    this.assertBetaInvite(dto.inviteCode);
+
     const studentRole = await this.prisma.role.findUnique({
       where: { code: "student" },
     });
@@ -263,6 +265,25 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       roles: user.roles.map((r) => r.role.code as RoleCode),
     };
+  }
+
+  private assertBetaInvite(inviteCode?: string) {
+    const betaMode = (this.config.get<string>("BETA_MODE") ?? "false") === "true";
+    if (!betaMode) return;
+
+    const raw = this.config.get<string>("BETA_INVITE_CODES") ?? "";
+    const codes = raw
+      .split(",")
+      .map((c) => c.trim())
+      .filter(Boolean);
+    if (!codes.length) {
+      throw new BadRequestException(
+        "Beta fechado: configure BETA_INVITE_CODES no servidor.",
+      );
+    }
+    if (!inviteCode || !codes.includes(inviteCode.trim())) {
+      throw new BadRequestException("Código de convite beta inválido.");
+    }
   }
 
   private hashToken(token: string) {

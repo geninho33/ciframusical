@@ -1,8 +1,10 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
+import { initSentryFromEnv } from "./observability/sentry";
 
 async function bootstrap() {
+  initSentryFromEnv();
   const app = await NestFactory.create(AppModule);
 
   const corsOrigin = process.env.API_CORS_ORIGIN ?? "http://localhost:5173";

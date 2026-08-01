@@ -69,12 +69,14 @@ pnpm dev:web    # http://localhost:5173
 
 ## Status
 
-**Fase 5 — Sync Editor** implementada (timeline/waveform, drag de eventos, letra, publish + fila admin).
+**Fase 6 — Hardening & Launch** implementada (moderação/métricas, observabilidade, e2e críticos, a11y teclado, beta fechado).
 
 Rotas úteis:
 - `/editar-sync/:slug` — editor de sync (creator/admin)
-- `/admin/aprovacoes` — fila de aprovação
+- `/admin/metricas` · `/admin/aprovacoes` · `/admin/denuncias`
 - `/praticar/meu-amor-acoustic-playalong` — play-along demo
+- `GET /v1/metrics` — Prometheus text
+- Cadastro beta: `BETA_MODE=true` + `BETA_INVITE_CODES` / `VITE_BETA_MODE=true`
 
 ```bash
 # terminais
@@ -82,6 +84,9 @@ pnpm docker:up && pnpm db:setup
 pnpm dev:api
 pnpm dev:web
 cd services/audio-worker && .venv\Scripts\activate && uvicorn app.main:app --port 8001
+
+# smoke e2e (API ligada)
+pnpm test:e2e
 ```
 
 ## Licença

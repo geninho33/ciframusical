@@ -74,6 +74,21 @@ enum ApprovalDecision {
   changes_requested
 }
 
+enum ReportReason {
+  copyright
+  inappropriate
+  spam
+  incorrect_sync
+  other
+}
+
+enum ReportStatus {
+  open
+  reviewing
+  resolved
+  dismissed
+}
+
 model User {
   id              String     @id @default(uuid()) @db.Uuid
   email           String     @unique @db.Citext
@@ -96,6 +111,8 @@ model User {
   processingJobs      ProcessingJob[]
   syncVersions        SyncVersion[]
   syncApprovals       SyncApproval[]
+  trackReports        TrackReport[]        @relation("ReportReporter")
+  resolvedReports     TrackReport[]        @relation("ReportResolver")
 
   @@unique([oauthProvider, oauthSubject], map: "users_oauth_unique")
   @@map("users")
@@ -207,12 +224,34 @@ model Track {
   favorites       Favorite[]
   syncVersions    SyncVersion[]
   processingJobs  ProcessingJob[]
+  reports         TrackReport[]
 
   @@index([status])
   @@index([bpm])
   @@index([originalKey])
   @@index([creatorId])
   @@map("tracks")
+}
+
+model TrackReport {
+  id           String       @id @default(uuid()) @db.Uuid
+  trackId      String       @map("track_id") @db.Uuid
+  reporterId   String       @map("reporter_id") @db.Uuid
+  reason       ReportReason
+  details      String?      @db.VarChar(1000)
+  status       ReportStatus @default(open)
+  resolverId   String?      @map("resolver_id") @db.Uuid
+  resolution   String?      @db.VarChar(500)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  resolvedAt   DateTime?    @map("resolved_at") @db.Timestamptz(6)
+
+  track    Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  reporter User  @relation("ReportReporter", fields: [reporterId], references: [id])
+  resolver User? @relation("ReportResolver", fields: [resolverId], references: [id])
+
+  @@index([status])
+  @@index([trackId])
+  @@map("track_reports")
 }
 
 model TrackGenre {

@@ -22,13 +22,15 @@ export function TransportBar() {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className={styles.bar}>
+    <div className={styles.bar} role="group" aria-label="Controles do player">
       <div className={styles.seekRow}>
         <button
           type="button"
           className={styles.play}
           onClick={() => void toggle()}
           disabled={status === "loading" || status === "idle"}
+          aria-keyshortcuts="Space"
+          aria-label={status === "playing" ? "Pausar" : "Reproduzir"}
         >
           {status === "playing" ? "Pause" : "Play"}
         </button>
@@ -59,6 +61,7 @@ export function TransportBar() {
             step={1}
             value={transposeSemitones}
             onChange={(e) => setTranspose(Number(e.target.value))}
+            aria-label="Transpor tom em semitons"
           />
           <span>{transposeSemitones > 0 ? `+${transposeSemitones}` : transposeSemitones}</span>
         </label>
@@ -72,21 +75,28 @@ export function TransportBar() {
             step={0.05}
             value={playbackRate}
             onChange={(e) => setPlaybackRate(Number(e.target.value))}
+            aria-label="Velocidade de reprodução"
           />
           <span>{playbackRate.toFixed(2)}×</span>
         </label>
 
-        <div className={styles.loopGroup}>
-          <button type="button" onClick={setLoopA}>
+        <div className={styles.loopGroup} role="group" aria-label="Loop A/B">
+          <button type="button" onClick={setLoopA} aria-label="Marcar ponto A">
             A {loop.a != null ? formatTime(loop.a) : "—"}
           </button>
-          <button type="button" onClick={setLoopB}>
+          <button type="button" onClick={setLoopB} aria-label="Marcar ponto B">
             B {loop.b != null ? formatTime(loop.b) : "—"}
           </button>
-          <button type="button" onClick={toggleLoop} data-on={loop.enabled}>
+          <button
+            type="button"
+            onClick={toggleLoop}
+            data-on={loop.enabled}
+            aria-pressed={loop.enabled}
+            aria-label="Ativar ou desativar loop"
+          >
             Loop {loop.enabled ? "ON" : "OFF"}
           </button>
-          <button type="button" onClick={clearLoop}>
+          <button type="button" onClick={clearLoop} aria-label="Limpar loop">
             Limpar
           </button>
         </div>

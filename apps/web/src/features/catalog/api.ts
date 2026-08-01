@@ -195,3 +195,62 @@ export function addFavorite(trackId: string, token: string) {
 export function removeFavorite(trackId: string, token: string) {
   return apiRequest(`/me/favorites/${trackId}`, { method: "DELETE", token });
 }
+
+export function reportTrack(
+  trackId: string,
+  token: string,
+  body: {
+    reason: "copyright" | "inappropriate" | "spam" | "incorrect_sync" | "other";
+    details?: string;
+  },
+) {
+  return apiRequest<{ id: string; status: string; message: string }>(
+    `/tracks/${trackId}/reports`,
+    { method: "POST", token, body },
+  );
+}
+
+export function fetchAdminMetrics(token: string) {
+  return apiRequest<{
+    users: number;
+    tracks: {
+      published: number;
+      pendingApproval: number;
+      processing: number;
+    };
+    reports: { open: number };
+    jobs: { failedLast24h: number; completedLast24h: number };
+    favorites: number;
+    runtime: { uptimeSeconds: number; counters: Record<string, number> };
+  }>("/admin/metrics", { token });
+}
+
+export function fetchAdminReports(token: string, status = "open") {
+  return apiRequest<{
+    items: Array<{
+      id: string;
+      reason: string;
+      details: string | null;
+      status: string;
+      createdAt: string;
+      track: { id: string; slug: string; title: string; status: string };
+      reporter: { id: string; email: string; displayName: string };
+    }>;
+  }>(`/admin/reports?status=${encodeURIComponent(status)}`, { token });
+}
+
+export function resolveAdminReport(
+  reportId: string,
+  token: string,
+  body: {
+    decision: "resolved" | "dismissed";
+    archiveTrack?: boolean;
+    resolution?: string;
+  },
+) {
+  return apiRequest(`/admin/reports/${reportId}/resolve`, {
+    method: "POST",
+    token,
+    body,
+  });
+}
