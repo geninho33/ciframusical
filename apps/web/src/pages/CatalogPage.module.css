@@ -1,0 +1,101 @@
+.page {
+  animation: rise 0.55s var(--ease-out) both;
+}
+
+.header {
+  margin-bottom: var(--space-6);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  letter-spacing: -0.03em;
+}
+
+.subtitle {
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+}
+
+.statusCard {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.statusTitle {
+  margin: 0 0 var(--space-3);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.meta {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.meta div {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: var(--space-3);
+}
+
+.meta dt {
+  color: var(--text-subtle);
+}
+
+.meta dd {
+  margin: 0;
+}
+
+.ok {
+  color: var(--accent);
+}
+
+.error {
+  margin: 0;
+  color: var(--warning);
+}
+
+.emptyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+
+.skeleton {
+  aspect-ratio: 1 / 1.1;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    110deg,
+    var(--bg-elevated) 25%,
+    var(--bg-panel) 45%,
+    var(--bg-elevated) 65%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border: 1px solid var(--border-subtle);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}

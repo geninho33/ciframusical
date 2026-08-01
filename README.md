@@ -4,28 +4,71 @@ Plataforma web interativa para músicos estudarem, praticarem e tocarem junto co
 
 ## Documentação
 
-A especificação completa de software (Spec-Driven Development) está em:
+- 📄 **[docs/SPEC.md](docs/SPEC.md)** — Spec Document SDD (fonte da verdade)
+- [`docs/schema.sql`](docs/schema.sql) — Schema PostgreSQL
+- [`docs/sync-format.schema.json`](docs/sync-format.schema.json) — JSON Schema do sync
 
-📄 **[docs/SPEC.md](docs/SPEC.md)** — Spec Document oficial (visão, arquitetura, dados, APIs, formatos, UI e roadmap)
-
-Arquivos auxiliares:
-
-- [`docs/schema.sql`](docs/schema.sql) — Schema SQL inicial (PostgreSQL)
-- [`docs/sync-format.schema.json`](docs/sync-format.schema.json) — JSON Schema do formato de sincronização de cifras
-
-## Stack (resumo)
+## Stack
 
 | Camada | Tecnologia |
 |--------|------------|
-| Frontend | React + TypeScript + Vite + Zustand + Tone.js / Web Audio API |
-| Backend API | NestJS (Node.js) + JWT / OAuth2 |
-| Workers de áudio | Python (FastAPI) + Librosa / Essentia + Celery/RQ |
-| Banco | PostgreSQL + Redis |
-| Storage | S3-compatible (MinIO em dev / AWS S3 em prod) |
+| Frontend | React + TypeScript + Vite + Zustand |
+| Backend API | NestJS (Node 22) |
+| Audio Worker | Python FastAPI (+ Librosa na Fase 4) |
+| Dados | PostgreSQL + Redis + MinIO (S3) |
+| Monorepo | pnpm + Turborepo |
+
+## Estrutura
+
+```text
+apps/web                 # SPA
+apps/api                 # NestJS API
+services/audio-worker    # Worker Python
+packages/typescript-config
+docs/                    # Spec + schema
+```
+
+## Pré-requisitos
+
+- Node.js 22+
+- pnpm 9 (`npm i -g pnpm`)
+- Docker Desktop
+- Python 3.11+ (worker)
+
+## Setup local (Fase 0)
+
+```bash
+# 1) Dependências JS
+pnpm install
+cp .env.example .env
+
+# 2) Infra
+pnpm docker:up
+
+# 3) Apps
+pnpm dev:api    # http://localhost:3000/v1/health
+pnpm dev:web    # http://localhost:5173
+
+# 4) Worker (opcional nesta fase)
+cd services/audio-worker
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+pip install -e ".[dev]"
+uvicorn app.main:app --reload --port 8001
+```
+
+## Scripts
+
+| Comando | Descrição |
+|---------|-----------|
+| `pnpm dev` | Turbo: sobe web + api |
+| `pnpm build` | Build de todos os pacotes |
+| `pnpm lint` / `typecheck` / `test` | Qualidade |
+| `pnpm docker:up` / `docker:down` | Postgres, Redis, MinIO |
 
 ## Status
 
-Fase 0 — Especificação (SDD). Implementação conforme o plano em `docs/SPEC.md`.
+**Fase 0 — Fundação** em andamento: monorepo, Docker Compose, CI, shell dark mode e healthchecks.
 
 ## Licença
 

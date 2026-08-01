@@ -907,10 +907,10 @@ Técnicas obrigatórias: `requestAnimationFrame`, binary search em eventos, virt
 
 ### Fase 0 — Fundação (1–2 sprints)
 - [x] Spec Document SDD (este arquivo)
-- [ ] Monorepo (pnpm/turborepo): `apps/web`, `apps/api`, `services/audio-worker`
-- [ ] Docker Compose: PostgreSQL, Redis, MinIO
-- [ ] CI básica (lint, typecheck, unit)
-- [ ] Design tokens dark mode + layout shell
+- [x] Monorepo (pnpm/turborepo): `apps/web`, `apps/api`, `services/audio-worker`
+- [x] Docker Compose: PostgreSQL, Redis, MinIO
+- [x] CI básica (lint, typecheck, unit)
+- [x] Design tokens dark mode + layout shell
 
 **Saída:** ambiente local bootável.
 

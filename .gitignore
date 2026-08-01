@@ -12,6 +12,11 @@ build/
 .next/
 coverage/
 *.tsbuildinfo
+.turbo/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+services/audio-worker/.venv/
 
 # Env & secrets
 .env

@@ -1,0 +1,87 @@
+.hero {
+  min-height: calc(100vh - var(--nav-height) - 6rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 42rem;
+  animation: rise 0.7s var(--ease-out) both;
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.lead {
+  margin: var(--space-5) 0 0;
+  color: var(--text-muted);
+  font-size: 1.125rem;
+  max-width: 34rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.ctaPrimary,
+.ctaGhost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.7rem 1.2rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.ctaPrimary {
+  background: var(--accent);
+  color: #06140e;
+}
+
+.ctaPrimary:hover {
+  transform: translateY(-1px);
+  background: #57e7a8;
+}
+
+.ctaGhost {
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  background: transparent;
+}
+
+.ctaGhost:hover {
+  border-color: var(--accent-dim);
+  background: var(--bg-elevated);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
