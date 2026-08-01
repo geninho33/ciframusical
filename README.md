@@ -35,26 +35,24 @@ docs/                    # Spec + schema
 - Docker Desktop
 - Python 3.11+ (worker)
 
-## Setup local (Fase 0)
+## Setup local
 
 ```bash
 # 1) Dependências JS
 pnpm install
 cp .env.example .env
+cp .env apps/api/.env
 
-# 2) Infra
+# 2) Infra (Docker Desktop ligado)
 pnpm docker:up
 
-# 3) Apps
+# 3) Banco + seed admin
+pnpm db:setup
+# admin@cifratrack.local / Admin123!
+
+# 4) Apps
 pnpm dev:api    # http://localhost:3000/v1/health
 pnpm dev:web    # http://localhost:5173
-
-# 4) Worker (opcional nesta fase)
-cd services/audio-worker
-python -m venv .venv
-.venv\Scripts\activate   # Windows
-pip install -e ".[dev]"
-uvicorn app.main:app --reload --port 8001
 ```
 
 ## Scripts
@@ -65,10 +63,11 @@ uvicorn app.main:app --reload --port 8001
 | `pnpm build` | Build de todos os pacotes |
 | `pnpm lint` / `typecheck` / `test` | Qualidade |
 | `pnpm docker:up` / `docker:down` | Postgres, Redis, MinIO |
+| `pnpm db:setup` | Migrate + seed (admin) |
 
 ## Status
 
-**Fase 0 — Fundação** em andamento: monorepo, Docker Compose, CI, shell dark mode e healthchecks.
+**Fase 1 — Identity & RBAC** implementada (JWT, roles, UI de auth). OAuth Google fica como stub até configurar credenciais.
 
 ## Licença
 

@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { AuthModule } from "./auth/auth.module";
 import { HealthController } from "./health/health.controller";
+import { PrismaModule } from "./prisma/prisma.module";
 
 @Module({
   imports: [
@@ -8,6 +10,8 @@ import { HealthController } from "./health/health.controller";
       isGlobal: true,
       envFilePath: ["../../.env", ".env"],
     }),
+    PrismaModule,
+    AuthModule,
   ],
   controllers: [HealthController],
 })

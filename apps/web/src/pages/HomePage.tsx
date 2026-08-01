@@ -11,17 +11,12 @@ export function HomePage() {
         tempo real, transposição e loop A/B.
       </p>
       <div className={styles.actions}>
-        <Link className={styles.ctaPrimary} to="/catalogo">
+        <Link className={styles.ctaPrimary} to="/cadastro">
+          Criar conta
+        </Link>
+        <Link className={styles.ctaGhost} to="/catalogo">
           Explorar catálogo
         </Link>
-        <a
-          className={styles.ctaGhost}
-          href="https://github.com/geninho33/ciframusical/blob/main/docs/SPEC.md"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Ver Spec SDD
-        </a>
       </div>
     </section>
   );

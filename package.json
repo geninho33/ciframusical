@@ -15,7 +15,9 @@
     "dev:api": "pnpm --filter @cifratrack/api dev",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f"
+    "docker:logs": "docker compose logs -f",
+    "db:setup": "pnpm --filter @cifratrack/api db:setup",
+    "db:seed": "pnpm --filter @cifratrack/api prisma:seed"
   },
   "devDependencies": {
     "turbo": "^2.5.4",

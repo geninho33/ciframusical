@@ -915,10 +915,10 @@ Técnicas obrigatórias: `requestAnimationFrame`, binary search em eventos, virt
 **Saída:** ambiente local bootável.
 
 ### Fase 1 — Identity & RBAC (1 sprint)
-- [ ] Register / Login / Refresh / Forgot password
-- [ ] OAuth Google
-- [ ] Roles `admin | creator | student`
-- [ ] Guards na API + menus condicionais no front
+- [x] Register / Login / Refresh / Forgot password
+- [ ] OAuth Google *(endpoint stub 501 — ativar com GOOGLE_CLIENT_ID/SECRET)*
+- [x] Roles `admin | creator | student`
+- [x] Guards na API + menus condicionais no front
 
 **Saída:** `RF-A*` atendidos; seeds de admin.
 

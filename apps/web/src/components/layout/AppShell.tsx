@@ -1,12 +1,26 @@
+import { useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useAuthStore } from "../../features/auth/authStore";
 import styles from "./AppShell.module.css";
 
-const links = [
-  { to: "/", label: "Início", end: true },
-  { to: "/catalogo", label: "Catálogo", end: false },
-];
-
 export function AppShell() {
+  const { user, hasRole, logout, loadMe } = useAuthStore();
+
+  useEffect(() => {
+    void loadMe();
+  }, [loadMe]);
+
+  const links = [
+    { to: "/", label: "Início", end: true, show: true },
+    { to: "/catalogo", label: "Catálogo", end: false, show: true },
+    {
+      to: "/admin/usuarios",
+      label: "Admin",
+      end: false,
+      show: Boolean(user && hasRole("admin")),
+    },
+  ];
+
   return (
     <div className={styles.shell}>
       <header className={styles.nav}>
@@ -16,22 +30,42 @@ export function AppShell() {
         </NavLink>
 
         <nav className={styles.navLinks} aria-label="Principal">
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.end}
-              className={({ isActive }) =>
-                isActive ? `${styles.link} ${styles.linkActive}` : styles.link
-              }
-            >
-              {link.label}
-            </NavLink>
-          ))}
+          {links
+            .filter((link) => link.show)
+            .map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.end}
+                className={({ isActive }) =>
+                  isActive ? `${styles.link} ${styles.linkActive}` : styles.link
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
         </nav>
 
         <div className={styles.navActions}>
-          <span className={styles.phaseBadge}>Fase 0</span>
+          {user ? (
+            <>
+              <span className={styles.userChip} title={user.email}>
+                {user.displayName}
+              </span>
+              <button type="button" className={styles.textButton} onClick={logout}>
+                Sair
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/login" className={styles.textButton}>
+                Entrar
+              </NavLink>
+              <NavLink to="/cadastro" className={styles.ctaButton}>
+                Cadastrar
+              </NavLink>
+            </>
+          )}
         </div>
       </header>
 
