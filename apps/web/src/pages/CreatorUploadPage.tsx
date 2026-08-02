@@ -13,7 +13,7 @@ import {
 } from "../features/catalog/UploadProgressBar";
 import type { Taxonomy } from "../features/catalog/types";
 import { useAuthStore } from "../features/auth/authStore";
-import { ApiError } from "../shared/api/client";
+import { API_BASE, ApiError } from "../shared/api/client";
 import styles from "../features/auth/AuthForm.module.css";
 import pageStyles from "./CreatorUploadPage.module.css";
 
@@ -158,24 +158,27 @@ export function CreatorUploadPage() {
           label: "Enviando MP3…",
           phase: "uploading",
         });
+        const contentType =
+          upload.headers?.["Content-Type"] || file.type || "audio/mpeg";
+        // Default: proxy via API (no browser→MinIO CORS). Presigned only if requested.
+        const useProxy =
+          upload.uploadMode !== "presigned" || !upload.uploadUrl;
+        const putUrl = useProxy
+          ? `${API_BASE}${upload.proxyUploadPath}`
+          : upload.uploadUrl;
         const putHeaders: Record<string, string> = {
-          "Content-Type":
-            upload.headers?.["Content-Type"] ||
-            file.type ||
-            "audio/mpeg",
+          "Content-Type": contentType,
         };
-        await putFileWithProgress(
-          upload.uploadUrl,
-          file,
-          putHeaders,
-          (ratio) => {
-            setProgress({
-              percent: 15 + ratio * 40,
-              label: `Enviando MP3… ${Math.round(ratio * 100)}%`,
-              phase: "uploading",
-            });
-          },
-        );
+        if (useProxy) {
+          putHeaders.Authorization = `Bearer ${accessToken}`;
+        }
+        await putFileWithProgress(putUrl, file, putHeaders, (ratio) => {
+          setProgress({
+            percent: 15 + ratio * 40,
+            label: `Enviando MP3… ${Math.round(ratio * 100)}%`,
+            phase: "uploading",
+          });
+        });
 
         setProgress({
           percent: 58,

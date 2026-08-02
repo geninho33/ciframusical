@@ -10,6 +10,11 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
+function envOr(config: ConfigService, key: string, fallback: string) {
+  const value = config.get<string>(key)?.trim();
+  return value ? value : fallback;
+}
+
 @Injectable()
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
@@ -23,40 +28,53 @@ export class StorageService implements OnModuleInit {
   private readonly bucket: string;
   private readonly endpoint: string;
   private readonly publicEndpoint: string;
+  private readonly accessKeyId: string;
 
   constructor(private readonly config: ConfigService) {
-    this.endpoint =
-      this.config.get<string>("S3_ENDPOINT")?.trim() ||
-      "http://localhost:9000";
-    this.publicEndpoint =
-      this.config.get<string>("S3_PUBLIC_ENDPOINT")?.trim() || this.endpoint;
-    this.bucket = this.config.get<string>("S3_BUCKET")?.trim() || "cifratrack";
+    this.endpoint = envOr(config, "S3_ENDPOINT", "http://localhost:9000");
+    this.publicEndpoint = envOr(config, "S3_PUBLIC_ENDPOINT", this.endpoint);
+    this.bucket = envOr(config, "S3_BUCKET", "cifratrack");
+    this.accessKeyId = envOr(config, "S3_ACCESS_KEY_ID", "cifratrack");
+    const secretAccessKey = envOr(
+      config,
+      "S3_SECRET_ACCESS_KEY",
+      "cifratrack_secret",
+    );
 
-    const region = this.config.get<string>("S3_REGION") ?? "us-east-1";
+    const region = envOr(config, "S3_REGION", "us-east-1");
     const forcePathStyle =
-      (this.config.get<string>("S3_FORCE_PATH_STYLE") ?? "true") === "true";
+      (config.get<string>("S3_FORCE_PATH_STYLE") ?? "true") === "true";
     const credentials = {
-      accessKeyId: this.config.get<string>("S3_ACCESS_KEY_ID") ?? "cifratrack",
-      secretAccessKey:
-        this.config.get<string>("S3_SECRET_ACCESS_KEY") ?? "cifratrack_secret",
+      accessKeyId: this.accessKeyId,
+      secretAccessKey,
+    };
+
+    // MinIO + browser PUT: disable flexible checksums (CRC32 query params break uploads).
+    const clientOpts = {
+      region,
+      forcePathStyle,
+      credentials,
+      requestChecksumCalculation: "WHEN_REQUIRED" as const,
+      responseChecksumValidation: "WHEN_REQUIRED" as const,
     };
 
     this.client = new S3Client({
-      region,
+      ...clientOpts,
       endpoint: this.endpoint,
-      forcePathStyle,
-      credentials,
     });
 
     this.signingClient =
       this.publicEndpoint === this.endpoint
         ? this.client
         : new S3Client({
-            region,
+            ...clientOpts,
             endpoint: this.publicEndpoint,
-            forcePathStyle,
-            credentials,
           });
+
+    this.logger.log(
+      `S3 ready endpoint=${this.endpoint} public=${this.publicEndpoint} ` +
+        `bucket=${this.bucket} accessKeyId=${this.accessKeyId}`,
+    );
   }
 
   async onModuleInit() {
@@ -111,7 +129,7 @@ export class StorageService implements OnModuleInit {
     } catch (error) {
       this.logger.warn(
         `Bucket CORS not applied (expected on MinIO community). ` +
-          `Set MINIO_API_CORS_ALLOW_ORIGIN=${origins.join(",")}. ` +
+          `Set MINIO_API_CORS_ALLOW_ORIGIN=* (or your front origins). ` +
           `Detail: ${String(error)}`,
       );
     }
@@ -130,13 +148,12 @@ export class StorageService implements OnModuleInit {
       ContentType: contentType,
     });
 
-    // Sign with the public endpoint client — never rewrite host after signing.
     const uploadUrl = await getSignedUrl(this.signingClient, command, {
       expiresIn,
       signableHeaders: new Set(["content-type"]),
     });
 
-    this.assertSignedContentType(uploadUrl, contentType);
+    this.assertPresignedPutUrl(uploadUrl, contentType);
 
     return {
       uploadUrl,
@@ -199,23 +216,36 @@ export class StorageService implements OnModuleInit {
     return [...new Set([...list, ...defaults])];
   }
 
-  private assertSignedContentType(uploadUrl: string, contentType: string) {
+  private assertPresignedPutUrl(uploadUrl: string, contentType: string) {
+    if (!contentType) {
+      throw new Error("Presigned PUT requires a non-empty Content-Type");
+    }
+
     try {
-      const signedHeaders = new URL(uploadUrl).searchParams.get(
-        "X-Amz-SignedHeaders",
-      );
+      const url = new URL(uploadUrl);
+      const credential = url.searchParams.get("X-Amz-Credential") ?? "";
+      const accessKey = decodeURIComponent(credential).split("/")[0] ?? "";
+      if (!accessKey) {
+        throw new Error(
+          "Presigned URL missing AccessKeyId in X-Amz-Credential — check S3_ACCESS_KEY_ID",
+        );
+      }
+      if (url.searchParams.has("x-amz-checksum-crc32")) {
+        this.logger.warn(
+          "Presigned URL still includes checksum params; MinIO browser PUT may fail",
+        );
+      }
+      const signedHeaders = url.searchParams.get("X-Amz-SignedHeaders");
       if (!signedHeaders?.split(";").includes("content-type")) {
         this.logger.warn(
           `Presigned PUT missing content-type in SignedHeaders (got: ${signedHeaders})`,
         );
       }
-    } catch {
-      this.logger.warn("Could not parse presigned PUT URL for SignedHeaders check");
-    }
-
-    // Ensure caller/browser can match the signed Content-Type exactly.
-    if (!contentType) {
-      throw new Error("Presigned PUT requires a non-empty Content-Type");
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("AccessKeyId")) {
+        throw error;
+      }
+      this.logger.warn(`Could not validate presigned PUT URL: ${String(error)}`);
     }
   }
 }

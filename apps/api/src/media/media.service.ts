@@ -70,19 +70,85 @@ export class MediaService {
       },
     });
 
-    const signed = await this.storage.createPresignedPutUrl({
-      key: storageKey,
-      mimeType,
-    });
+    // Prefer API proxy upload for MinIO/local (avoids browser↔:9000 CORS).
+    // Set UPLOAD_MODE=presigned to use direct S3/MinIO URLs instead.
+    const uploadMode =
+      (process.env.UPLOAD_MODE ?? "proxy").toLowerCase() === "presigned"
+        ? ("presigned" as const)
+        : ("proxy" as const);
+
+    let uploadUrl = "";
+    let expiresAt = new Date(Date.now() + 900_000).toISOString();
+    if (uploadMode === "presigned") {
+      const signed = await this.storage.createPresignedPutUrl({
+        key: storageKey,
+        mimeType,
+      });
+      uploadUrl = signed.uploadUrl;
+      expiresAt = signed.expiresAt;
+    }
 
     return {
       uploadId: media.id,
       mediaFileId: media.id,
       method: "PUT" as const,
-      uploadUrl: signed.uploadUrl,
-      // Must match PutObject ContentType used when signing (SignedHeaders).
-      headers: signed.headers ?? { "Content-Type": mimeType },
-      expiresAt: signed.expiresAt,
+      uploadMode,
+      /** Direct MinIO/S3 URL (only when uploadMode=presigned). */
+      uploadUrl,
+      /** Same-origin API path — browser never talks to :9000. */
+      proxyUploadPath: `/media/uploads/${media.id}/content`,
+      headers: { "Content-Type": mimeType },
+      expiresAt,
+    };
+  }
+
+  async putUploadContent(
+    user: JwtPayload,
+    uploadId: string,
+    body: Buffer,
+    contentType?: string,
+  ) {
+    const media = await this.prisma.mediaFile.findUnique({
+      where: { id: uploadId },
+      include: { track: true },
+    });
+    if (!media) throw new NotFoundException("Upload not found");
+    if (media.track.creatorId !== user.sub && !user.roles.includes("admin")) {
+      throw new ForbiddenException();
+    }
+    if (media.uploadStatus === "completed") {
+      throw new BadRequestException("Upload already completed");
+    }
+    if (!body.length) {
+      throw new BadRequestException("Empty upload body");
+    }
+
+    const mimeType = normalizeAudioMime(
+      contentType?.split(";")[0]?.trim() || media.mimeType || "audio/mpeg",
+    );
+    if (!ALLOWED_MIME.has(mimeType)) {
+      throw new BadRequestException("Unsupported audio mime type");
+    }
+
+    await this.storage.putObject({
+      key: media.storageKey,
+      body,
+      mimeType,
+    });
+
+    await this.prisma.mediaFile.update({
+      where: { id: media.id },
+      data: {
+        mimeType,
+        sizeBytes: BigInt(body.length),
+      },
+    });
+
+    return {
+      uploadId: media.id,
+      bytes: body.length,
+      mimeType,
+      status: "stored",
     };
   }
 

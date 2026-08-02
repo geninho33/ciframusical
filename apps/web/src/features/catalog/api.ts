@@ -141,7 +141,9 @@ export function initUpload(
 ) {
   return apiRequest<{
     uploadId: string;
+    uploadMode: "proxy" | "presigned";
     uploadUrl: string;
+    proxyUploadPath: string;
     headers: Record<string, string>;
   }>("/media/uploads", { method: "POST", token, body });
 }

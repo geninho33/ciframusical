@@ -1,14 +1,15 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { json, raw, urlencoded } from "express";
 import { AppModule } from "./app.module";
 import { initSentryFromEnv } from "./observability/sentry";
 
 function resolveCorsOrigins(): string[] | boolean {
-  const raw =
+  const rawOrigins =
     process.env.API_CORS_ORIGIN ??
     "http://localhost:5173,http://127.0.0.1:5173";
-  if (raw.trim() === "*") return true;
-  const list = raw
+  if (rawOrigins.trim() === "*") return true;
+  const list = rawOrigins
     .split(",")
     .map((o) => o.trim())
     .filter(Boolean);
@@ -19,7 +20,25 @@ function resolveCorsOrigins(): string[] | boolean {
 
 async function bootstrap() {
   initSentryFromEnv();
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+
+  // JSON for API; raw bytes for PUT /media/uploads/:id/content (audio/*).
+  app.use(json({ limit: "2mb" }));
+  app.use(urlencoded({ extended: true, limit: "2mb" }));
+  app.use(
+    raw({
+      type: (req) => {
+        if (req.method !== "PUT") return false;
+        const ct = String(req.headers["content-type"] ?? "");
+        return (
+          ct.startsWith("audio/") ||
+          ct.startsWith("application/octet-stream") ||
+          ct === ""
+        );
+      },
+      limit: "120mb",
+    }),
+  );
 
   app.enableCors({
     origin: resolveCorsOrigins(),

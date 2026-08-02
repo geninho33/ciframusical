@@ -39,9 +39,9 @@ services:
     environment:
       MINIO_ROOT_USER: cifratrack
       MINIO_ROOT_PASSWORD: cifratrack_secret
-      # Community MinIO: CORS é cluster-wide (bucket CORS é só AIStor pago).
-      # Origins do Vite (5173) e do deploy local (8088).
-      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_API_CORS_ALLOW_ORIGIN:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:8088,http://127.0.0.1:8088}
+      # Community MinIO: CORS cluster-wide (bucket CORS = AIStor pago).
+      # "*" evita falha quando o front usa localhost vs 127.0.0.1.
+      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_API_CORS_ALLOW_ORIGIN:-*}
     ports:
       - "9000:9000"
       - "9001:9001"
