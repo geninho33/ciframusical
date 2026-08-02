@@ -21,7 +21,8 @@ cp .env.example .env
 # edite senhas, JWT e API_CORS_ORIGIN
 # em S3_PUBLIC_ENDPOINT use http://SEU_IP:9002 (para playback)
 chmod +x deploy.sh
-./deploy.sh up
+./deploy.sh up          # já faz git pull + build + up
+# SKIP_GIT_PULL=true ./deploy.sh up   # se quiser pular o pull
 ```
 
 Se a API ficar unhealthy:

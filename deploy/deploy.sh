@@ -9,6 +9,19 @@ ENV_FILE="$DEPLOY_DIR/.env"
 
 cd "$ROOT"
 
+pull_latest() {
+  if [[ "${SKIP_GIT_PULL:-false}" == "true" ]]; then
+    echo "→ SKIP_GIT_PULL=true — pulando git pull"
+    return 0
+  fi
+  if [[ ! -d "$ROOT/.git" ]]; then
+    echo "→ Aviso: $ROOT não é um clone git — pulando git pull" >&2
+    return 0
+  fi
+  echo "→ git pull (origin)…"
+  git -C "$ROOT" pull --ff-only
+}
+
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "→ Criando $ENV_FILE a partir de .env.example"
   cp "$DEPLOY_DIR/.env.example" "$ENV_FILE"
@@ -38,6 +51,7 @@ CMD="${1:-up}"
 
 case "$CMD" in
   up|deploy)
+    pull_latest
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build --pull
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
     echo
@@ -56,8 +70,12 @@ case "$CMD" in
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps
     ;;
   rebuild)
+    pull_latest
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build --no-cache --pull
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
+    ;;
+  pull)
+    pull_latest
     ;;
   migrate)
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec api \
@@ -68,7 +86,7 @@ case "$CMD" in
       sh -c './node_modules/.bin/tsx prisma/seed.ts || ../../node_modules/.bin/tsx prisma/seed.ts'
     ;;
   *)
-    echo "Uso: $0 {up|down|logs|ps|rebuild|migrate|seed}"
+    echo "Uso: $0 {up|down|logs|ps|rebuild|pull|migrate|seed}"
     exit 1
     ;;
 esac
