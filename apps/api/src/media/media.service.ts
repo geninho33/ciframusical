@@ -23,6 +23,13 @@ const ALLOWED_MIME = new Set([
   "audio/aac",
 ]);
 
+/** Normalize aliases so signed Content-Type matches the browser PUT. */
+function normalizeAudioMime(mimeType: string): string {
+  const mime = mimeType.trim().toLowerCase();
+  if (mime === "audio/mp3") return "audio/mpeg";
+  return mime;
+}
+
 @Injectable()
 export class MediaService {
   constructor(
@@ -33,7 +40,8 @@ export class MediaService {
   ) {}
 
   async initUpload(user: JwtPayload, dto: InitUploadDto) {
-    if (!ALLOWED_MIME.has(dto.mimeType)) {
+    const mimeType = normalizeAudioMime(dto.mimeType || "audio/mpeg");
+    if (!ALLOWED_MIME.has(mimeType)) {
       throw new BadRequestException("Unsupported audio mime type");
     }
 
@@ -55,7 +63,7 @@ export class MediaService {
         trackId: track.id,
         kind: "source_audio",
         storageKey,
-        mimeType: dto.mimeType,
+        mimeType,
         sizeBytes: BigInt(dto.sizeBytes),
         checksumSha256: dto.checksumSha256 ?? null,
         uploadStatus: "pending",
@@ -64,7 +72,7 @@ export class MediaService {
 
     const signed = await this.storage.createPresignedPutUrl({
       key: storageKey,
-      mimeType: dto.mimeType,
+      mimeType,
     });
 
     return {
@@ -72,7 +80,8 @@ export class MediaService {
       mediaFileId: media.id,
       method: "PUT" as const,
       uploadUrl: signed.uploadUrl,
-      headers: { "Content-Type": dto.mimeType },
+      // Must match PutObject ContentType used when signing (SignedHeaders).
+      headers: signed.headers ?? { "Content-Type": mimeType },
       expiresAt: signed.expiresAt,
     };
   }

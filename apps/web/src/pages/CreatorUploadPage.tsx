@@ -102,12 +102,24 @@ export function CreatorUploadPage() {
         );
 
         setProgress("Enviando MP3…");
+        // Content-Type must match the value used when signing (X-Amz-SignedHeaders).
+        const putHeaders: Record<string, string> = {
+          "Content-Type":
+            upload.headers?.["Content-Type"] ||
+            file.type ||
+            "audio/mpeg",
+        };
         const put = await fetch(upload.uploadUrl, {
           method: "PUT",
-          headers: upload.headers,
+          headers: putHeaders,
           body: file,
         });
-        if (!put.ok) throw new Error(`Upload S3 falhou (${put.status})`);
+        if (!put.ok) {
+          const detail = await put.text().catch(() => "");
+          throw new Error(
+            `Upload S3 falhou (${put.status})${detail ? `: ${detail.slice(0, 200)}` : ""}`,
+          );
+        }
 
         setProgress("Confirmando upload e enfileirando análise…");
         const completed = await completeUpload(upload.uploadId, accessToken, true);
