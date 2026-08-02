@@ -2,6 +2,8 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
+  OnModuleInit,
   UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -27,12 +29,22 @@ const REFRESH_TTL_DAYS = 30;
 const RESET_TTL_MINUTES = 30;
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {}
+
+  async onModuleInit() {
+    try {
+      await this.ensureDefaultAdmin();
+    } catch (error) {
+      this.logger.warn(`ensureDefaultAdmin skipped: ${String(error)}`);
+    }
+  }
 
   async register(dto: RegisterDto): Promise<AuthTokensResponse> {
     const email = dto.email.toLowerCase().trim();
@@ -65,17 +77,30 @@ export class AuthService {
 
   async login(dto: LoginDto): Promise<AuthTokensResponse> {
     const email = dto.email.toLowerCase().trim();
+    const password = dto.password;
     const user = await this.prisma.user.findFirst({
       where: { email, deletedAt: null },
       include: { roles: { include: { role: true } } },
     });
 
     if (!user?.passwordHash || user.status !== "active") {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException(
+        this.devAuthHint(
+          "Invalid credentials",
+          "Usuário inexistente/inativo. Rode `pnpm db:setup` ou reinicie a API com ENSURE_ADMIN=true.",
+        ),
+      );
     }
 
-    const valid = await argon2.verify(user.passwordHash, dto.password);
-    if (!valid) throw new UnauthorizedException("Invalid credentials");
+    const valid = await argon2.verify(user.passwordHash, password);
+    if (!valid) {
+      throw new UnauthorizedException(
+        this.devAuthHint(
+          "Invalid credentials",
+          "Senha incorreta. Admin seed: admin@cifratrack.local / Admin123!",
+        ),
+      );
+    }
 
     return this.issueTokens(user);
   }
@@ -288,5 +313,78 @@ export class AuthService {
 
   private hashToken(token: string) {
     return createHash("sha256").update(token).digest("hex");
+  }
+
+  private isProduction() {
+    return (this.config.get<string>("NODE_ENV") ?? "development") === "production";
+  }
+
+  private devAuthHint(safe: string, hint: string) {
+    return this.isProduction() ? safe : `${safe}. ${hint}`;
+  }
+
+  /**
+   * Upserts the seed admin so local/deploy login works without a manual seed.
+   * Enabled by default outside production; set ENSURE_ADMIN=true/false to override.
+   */
+  private async ensureDefaultAdmin() {
+    const flag = this.config.get<string>("ENSURE_ADMIN");
+    const enabled =
+      flag === "true" || (flag !== "false" && !this.isProduction());
+    if (!enabled) return;
+
+    const roles = [
+      { code: "admin", name: "Administrador" },
+      { code: "creator", name: "Criador/Músico" },
+      { code: "student", name: "Estudante" },
+    ] as const;
+
+    for (const role of roles) {
+      await this.prisma.role.upsert({
+        where: { code: role.code },
+        update: { name: role.name },
+        create: { ...role },
+      });
+    }
+
+    const email = (
+      this.config.get<string>("SEED_ADMIN_EMAIL") ?? "admin@cifratrack.local"
+    )
+      .toLowerCase()
+      .trim();
+    const password =
+      this.config.get<string>("SEED_ADMIN_PASSWORD") ?? "Admin123!";
+    const passwordHash = await argon2.hash(password);
+
+    const admin = await this.prisma.user.upsert({
+      where: { email },
+      update: {
+        passwordHash,
+        status: "active",
+        deletedAt: null,
+        emailVerifiedAt: new Date(),
+        displayName: "Admin CifraTrack",
+      },
+      create: {
+        email,
+        passwordHash,
+        status: "active",
+        emailVerifiedAt: new Date(),
+        displayName: "Admin CifraTrack",
+      },
+    });
+
+    const allRoles = await this.prisma.role.findMany();
+    for (const role of allRoles) {
+      await this.prisma.userRole.upsert({
+        where: {
+          userId_roleId: { userId: admin.id, roleId: role.id },
+        },
+        update: {},
+        create: { userId: admin.id, roleId: role.id },
+      });
+    }
+
+    this.logger.log(`Default admin ensured: ${email}`);
   }
 }

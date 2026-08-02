@@ -1,0 +1,14 @@
+[
+  {
+    "AllowedOrigins": [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://localhost:8088",
+      "http://127.0.0.1:8088"
+    ],
+    "AllowedMethods": ["GET", "PUT", "POST", "HEAD", "DELETE"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag", "x-amz-request-id", "x-amz-id-2"],
+    "MaxAgeSeconds": 3000
+  }
+]

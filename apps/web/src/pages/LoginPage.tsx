@@ -37,9 +37,11 @@ export function LoginPage() {
           E-mail
           <input
             className={styles.input}
-            type="email"
-            autoComplete="email"
+            type="text"
+            inputMode="email"
+            autoComplete="username"
             required
+            placeholder="admin@cifratrack.local"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />

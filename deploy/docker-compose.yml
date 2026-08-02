@@ -52,6 +52,7 @@ services:
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@cifratrack.local}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
       RUN_SEED: ${RUN_SEED:-false}
+      ENSURE_ADMIN: ${ENSURE_ADMIN:-true}
       # Opcionais (jobs/storage — configure se tiver Redis/S3 externos)
       REDIS_URL: ${REDIS_URL:-}
       S3_ENDPOINT: ${S3_ENDPOINT:-}

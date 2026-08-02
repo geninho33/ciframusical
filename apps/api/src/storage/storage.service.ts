@@ -79,7 +79,10 @@ export class StorageService implements OnModuleInit {
     }
   }
 
-  /** Apply browser CORS so preflight OPTIONS succeeds for presigned PUT. */
+  /**
+   * Apply browser CORS for AWS S3.
+   * Community MinIO ignores bucket CORS — use MINIO_API_CORS_ALLOW_ORIGIN instead.
+   */
   async ensureCors() {
     const origins = this.resolveCorsOrigins();
     if (origins.length === 0) {
@@ -87,29 +90,31 @@ export class StorageService implements OnModuleInit {
       return;
     }
 
-    await this.client.send(
-      new PutBucketCorsCommand({
-        Bucket: this.bucket,
-        CORSConfiguration: {
-          CORSRules: [
-            {
-              AllowedOrigins: origins,
-              AllowedMethods: ["GET", "PUT", "HEAD", "POST"],
-              AllowedHeaders: [
-                "Content-Type",
-                "Content-Length",
-                "Content-MD5",
-                "x-amz-*",
-                "Authorization",
-              ],
-              ExposeHeaders: ["ETag", "x-amz-request-id", "x-amz-version-id"],
-              MaxAgeSeconds: 3000,
-            },
-          ],
-        },
-      }),
-    );
-    this.logger.log(`S3 CORS applied for origins: ${origins.join(", ")}`);
+    try {
+      await this.client.send(
+        new PutBucketCorsCommand({
+          Bucket: this.bucket,
+          CORSConfiguration: {
+            CORSRules: [
+              {
+                AllowedOrigins: origins,
+                AllowedMethods: ["GET", "PUT", "HEAD", "POST", "DELETE"],
+                AllowedHeaders: ["*"],
+                ExposeHeaders: ["ETag", "x-amz-request-id", "x-amz-version-id"],
+                MaxAgeSeconds: 3000,
+              },
+            ],
+          },
+        }),
+      );
+      this.logger.log(`S3 bucket CORS applied for origins: ${origins.join(", ")}`);
+    } catch (error) {
+      this.logger.warn(
+        `Bucket CORS not applied (expected on MinIO community). ` +
+          `Set MINIO_API_CORS_ALLOW_ORIGIN=${origins.join(",")}. ` +
+          `Detail: ${String(error)}`,
+      );
+    }
   }
 
   async createPresignedPutUrl(params: {

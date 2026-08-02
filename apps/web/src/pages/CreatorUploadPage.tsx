@@ -7,20 +7,64 @@ import {
   fetchTaxonomy,
   initUpload,
 } from "../features/catalog/api";
+import {
+  UploadProgressBar,
+  type UploadProgressState,
+} from "../features/catalog/UploadProgressBar";
 import type { Taxonomy } from "../features/catalog/types";
 import { useAuthStore } from "../features/auth/authStore";
 import { ApiError } from "../shared/api/client";
 import styles from "../features/auth/AuthForm.module.css";
 import pageStyles from "./CreatorUploadPage.module.css";
 
+const IDLE_PROGRESS: UploadProgressState = {
+  percent: 0,
+  label: "",
+  phase: "idle",
+};
+
+function putFileWithProgress(
+  url: string,
+  file: File,
+  headers: Record<string, string>,
+  onProgress: (ratio: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    for (const [key, value] of Object.entries(headers)) {
+      xhr.setRequestHeader(key, value);
+    }
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && event.total > 0) {
+        onProgress(event.loaded / event.total);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+        return;
+      }
+      reject(
+        new Error(
+          `Upload S3 falhou (${xhr.status})${xhr.responseText ? `: ${xhr.responseText.slice(0, 200)}` : ""}`,
+        ),
+      );
+    };
+    xhr.onerror = () =>
+      reject(new Error("Upload S3 falhou (rede/CORS). Verifique MinIO CORS."));
+    xhr.send(file);
+  });
+}
+
 async function waitForJob(
   jobId: string,
   token: string,
-  onProgress: (label: string) => void,
+  onProgress: (label: string, jobPercent: number) => void,
 ) {
   for (let i = 0; i < 120; i++) {
     const job = await fetchJob(jobId, token);
-    onProgress(`Análise: ${job.stage ?? job.status} (${job.progress}%)`);
+    onProgress(`Análise: ${job.stage ?? job.status}`, job.progress ?? 0);
     if (job.status === "completed") return job;
     if (job.status === "failed") {
       throw new Error(
@@ -46,7 +90,7 @@ export function CreatorUploadPage() {
   const [bpm, setBpm] = useState("100");
   const [lyricsPlain, setLyricsPlain] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [progress, setProgress] = useState<string | null>(null);
+  const [progress, setProgress] = useState<UploadProgressState>(IDLE_PROGRESS);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -72,7 +116,11 @@ export function CreatorUploadPage() {
     if (!accessToken) return;
     setLoading(true);
     setError(null);
-    setProgress("Criando faixa…");
+    setProgress({
+      percent: 4,
+      label: "Criando faixa…",
+      phase: "preparing",
+    });
 
     try {
       const track = await createTrack(
@@ -90,7 +138,11 @@ export function CreatorUploadPage() {
       );
 
       if (file) {
-        setProgress("Gerando URL de upload…");
+        setProgress({
+          percent: 10,
+          label: "Gerando URL de upload…",
+          phase: "preparing",
+        });
         const upload = await initUpload(
           {
             trackId: track.id,
@@ -101,45 +153,67 @@ export function CreatorUploadPage() {
           accessToken,
         );
 
-        setProgress("Enviando MP3…");
-        // Content-Type must match the value used when signing (X-Amz-SignedHeaders).
+        setProgress({
+          percent: 15,
+          label: "Enviando MP3…",
+          phase: "uploading",
+        });
         const putHeaders: Record<string, string> = {
           "Content-Type":
             upload.headers?.["Content-Type"] ||
             file.type ||
             "audio/mpeg",
         };
-        const put = await fetch(upload.uploadUrl, {
-          method: "PUT",
-          headers: putHeaders,
-          body: file,
-        });
-        if (!put.ok) {
-          const detail = await put.text().catch(() => "");
-          throw new Error(
-            `Upload S3 falhou (${put.status})${detail ? `: ${detail.slice(0, 200)}` : ""}`,
-          );
-        }
+        await putFileWithProgress(
+          upload.uploadUrl,
+          file,
+          putHeaders,
+          (ratio) => {
+            setProgress({
+              percent: 15 + ratio * 40,
+              label: `Enviando MP3… ${Math.round(ratio * 100)}%`,
+              phase: "uploading",
+            });
+          },
+        );
 
-        setProgress("Confirmando upload e enfileirando análise…");
-        const completed = await completeUpload(upload.uploadId, accessToken, true);
+        setProgress({
+          percent: 58,
+          label: "Confirmando upload e enfileirando análise…",
+          phase: "analyzing",
+        });
+        const completed = await completeUpload(
+          upload.uploadId,
+          accessToken,
+          true,
+        );
         if (completed.jobId) {
-          await waitForJob(completed.jobId, accessToken, setProgress);
+          await waitForJob(completed.jobId, accessToken, (label, jobPercent) => {
+            setProgress({
+              percent: 60 + (jobPercent / 100) * 35,
+              label,
+              phase: "analyzing",
+            });
+          });
         }
       }
 
-      setProgress("Abrindo Sync Editor…");
+      setProgress({
+        percent: 100,
+        label: "Abrindo Sync Editor…",
+        phase: "finishing",
+      });
       navigate(`/editar-sync/${track.slug}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : String(err));
-      setProgress(null);
+      setProgress(IDLE_PROGRESS);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <section className={styles.page}>
+    <section className={`${styles.page} ${pageStyles.widePage}`}>
       <h1 className={styles.title}>Nova faixa</h1>
       <p className={styles.subtitle}>
         Upload MP3 → análise (BPM/tom/acordes/letra) → Modo Estudo → publicar.
@@ -219,7 +293,9 @@ export function CreatorUploadPage() {
           <textarea
             className={styles.input}
             rows={6}
-            placeholder={"Uma linha por verso…\nAcreditei no seu amor\nE acabei como eu estou"}
+            placeholder={
+              "Uma linha por verso…\nAcreditei no seu amor\nE acabei como eu estou"
+            }
             value={lyricsPlain}
             onChange={(e) => setLyricsPlain(e.target.value)}
           />
@@ -233,7 +309,7 @@ export function CreatorUploadPage() {
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
         </label>
-        {progress ? <p className={styles.success}>{progress}</p> : null}
+        <UploadProgressBar state={progress} />
         {error ? <p className={styles.error}>{error}</p> : null}
         <button className={styles.submit} type="submit" disabled={loading}>
           {loading ? "Processando…" : "Criar, analisar e publicar"}

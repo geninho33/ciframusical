@@ -10,8 +10,11 @@ import {
   MinLength,
 } from "class-validator";
 
+/** Accepts admin@cifratrack.local and other non-public TLDs used in seed/dev. */
+const EMAIL_OPTS = { require_tld: false, allow_utf8_local_part: true } as const;
+
 export class RegisterDto {
-  @IsEmail()
+  @IsEmail(EMAIL_OPTS)
   email!: string;
 
   @IsString()
@@ -36,7 +39,7 @@ export class RegisterDto {
 }
 
 export class LoginDto {
-  @IsEmail()
+  @IsEmail(EMAIL_OPTS)
   email!: string;
 
   @IsString()
@@ -50,7 +53,7 @@ export class RefreshDto {
 }
 
 export class ForgotPasswordDto {
-  @IsEmail()
+  @IsEmail(EMAIL_OPTS)
   email!: string;
 }
 

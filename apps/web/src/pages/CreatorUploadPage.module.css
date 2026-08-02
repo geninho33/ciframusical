@@ -1,3 +1,7 @@
+.widePage {
+  max-width: 640px;
+}
+
 .wide {
   max-width: none;
 }

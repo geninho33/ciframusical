@@ -33,10 +33,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const data = text ? (JSON.parse(text) as unknown) : null;
 
   if (!res.ok) {
-    const detail =
-      typeof data === "object" && data && "message" in data
-        ? String((data as { message: string | string[] }).message)
-        : `HTTP ${res.status}`;
+    let detail = `HTTP ${res.status}`;
+    if (typeof data === "object" && data && "message" in data) {
+      const msg = (data as { message: string | string[] }).message;
+      detail = Array.isArray(msg) ? msg.join("; ") : String(msg);
+    }
     throw new ApiError(detail, res.status, data);
   }
 

@@ -35,5 +35,6 @@ deploy/
 
 ## Notas
 
-- `RUN_SEED=true` no primeiro boot cria o admin; depois mude para `false`.
+- `RUN_SEED=true` / `ENSURE_ADMIN=true` no primeiro boot cria o admin (`admin@cifratrack.local` / `Admin123!`); depois pode desligar.
 - Redis/MinIO/worker **não** estão neste compose de 3 serviços. Upload/analyze precisam de S3/Redis externos nas variáveis opcionais do `.env`.
+- MinIO community: CORS via `MINIO_API_CORS_ALLOW_ORIGIN` (ver `docker/minio-cors.readme.md`), não via CORS de bucket.

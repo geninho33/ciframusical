@@ -46,6 +46,8 @@ cp .env apps/api/.env
 # 2) Infra (Docker Desktop ligado)
 pnpm docker:up
 # Postgres do Compose usa a porta host 5433 (evita conflito com Postgres local)
+# MinIO CORS (browser → :9000): MINIO_API_CORS_ALLOW_ORIGIN no docker-compose
+# Após mudar CORS: docker compose up -d --force-recreate minio
 
 # 3) Banco + seed admin
 pnpm db:setup
