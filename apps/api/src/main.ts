@@ -1,6 +1,6 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
-import { json, raw, urlencoded } from "express";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { initSentryFromEnv } from "./observability/sentry";
 
@@ -20,25 +20,25 @@ function resolveCorsOrigins(): string[] | boolean {
 
 async function bootstrap() {
   initSentryFromEnv();
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  // bodyParser:false + useBodyParser avoids bare `import 'express'` (pnpm/Docker).
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
 
-  // JSON for API; raw bytes for PUT /media/uploads/:id/content (audio/*).
-  app.use(json({ limit: "2mb" }));
-  app.use(urlencoded({ extended: true, limit: "2mb" }));
-  app.use(
-    raw({
-      type: (req) => {
-        if (req.method !== "PUT") return false;
-        const ct = String(req.headers["content-type"] ?? "");
-        return (
-          ct.startsWith("audio/") ||
-          ct.startsWith("application/octet-stream") ||
-          ct === ""
-        );
-      },
-      limit: "120mb",
-    }),
-  );
+  app.useBodyParser("json", { limit: "2mb" });
+  app.useBodyParser("urlencoded", { extended: true, limit: "2mb" });
+  app.useBodyParser("raw", {
+    limit: "120mb",
+    type: (req) => {
+      if (req.method !== "PUT") return false;
+      const ct = String(req.headers["content-type"] ?? "");
+      return (
+        ct.startsWith("audio/") ||
+        ct.startsWith("application/octet-stream") ||
+        ct === ""
+      );
+    },
+  });
 
   app.enableCors({
     origin: resolveCorsOrigins(),
@@ -56,8 +56,8 @@ async function bootstrap() {
   );
 
   const port = Number(process.env.API_PORT ?? 3000);
-  await app.listen(port);
-  console.log(`CifraTrack API listening on http://localhost:${port}/v1`);
+  await app.listen(port, "0.0.0.0");
+  console.log(`CifraTrack API listening on http://0.0.0.0:${port}/v1`);
 }
 
 void bootstrap();

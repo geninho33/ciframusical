@@ -41,9 +41,29 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit() {
-    const redisUrl = this.config.get<string>("REDIS_URL") ?? "redis://localhost:6379";
+    const redisUrl =
+      this.config.get<string>("REDIS_URL")?.trim() ||
+      (this.config.get<string>("NODE_ENV") === "production"
+        ? ""
+        : "redis://localhost:6379");
+
+    if (!redisUrl) {
+      this.logger.warn(
+        "REDIS_URL not set — analyze queue disabled (upload proxy still works)",
+      );
+      return;
+    }
+
     try {
-      this.connection = new IORedis(redisUrl, { maxRetriesPerRequest: null });
+      this.connection = new IORedis(redisUrl, {
+        maxRetriesPerRequest: null,
+        lazyConnect: true,
+        enableOfflineQueue: false,
+      });
+      this.connection.on("error", (err) => {
+        this.logger.warn(`Redis error: ${err.message}`);
+      });
+      await this.connection.connect();
       this.queue = new Queue("analyze-audio", { connection: this.connection });
       this.worker = new Worker<AnalyzeJobPayload>(
         "analyze-audio",
@@ -56,6 +76,9 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       this.logger.log("BullMQ analyze-audio queue ready");
     } catch (error) {
       this.logger.warn(`Redis/BullMQ unavailable: ${String(error)}`);
+      this.connection = null;
+      this.queue = null;
+      this.worker = null;
     }
   }
 

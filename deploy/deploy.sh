@@ -25,11 +25,13 @@ set +a
 WEB_HOST_PORT="${WEB_HOST_PORT:-8088}"
 API_HOST_PORT="${API_HOST_PORT:-3200}"
 POSTGRES_HOST_PORT="${POSTGRES_HOST_PORT:-5434}"
+MINIO_API_HOST_PORT="${MINIO_API_HOST_PORT:-9002}"
 
 echo "=== CifraTrack deploy ==="
-echo "  web  → host :$WEB_HOST_PORT"
-echo "  api  → host :$API_HOST_PORT"
-echo "  db   → host :$POSTGRES_HOST_PORT"
+echo "  web   → host :$WEB_HOST_PORT"
+echo "  api   → host :$API_HOST_PORT"
+echo "  db    → host :$POSTGRES_HOST_PORT"
+echo "  minio → host :$MINIO_API_HOST_PORT"
 echo
 
 CMD="${1:-up}"
@@ -41,6 +43,8 @@ case "$CMD" in
     echo
     echo "OK. Frontend: http://$(hostname -I 2>/dev/null | awk '{print $1}'):$WEB_HOST_PORT"
     echo "    Health:   http://127.0.0.1:$API_HOST_PORT/v1/health"
+    echo "    MinIO:    http://127.0.0.1:$MINIO_API_HOST_PORT (console :${MINIO_CONSOLE_HOST_PORT:-9003})"
+    echo "Se api unhealthy: docker compose -f $COMPOSE_FILE --env-file $ENV_FILE logs api --tail=200"
     ;;
   down)
     docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" down

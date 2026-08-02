@@ -1,14 +1,17 @@
-# Deploy CifraTrack (3 containers)
+# Deploy CifraTrack
 
-| Serviço   | Container         | Porta interna | Porta HOST |
-|-----------|-------------------|---------------|------------|
-| Frontend  | `cifratrack-web`  | 80 (Nginx)    | **8088**   |
-| Backend   | `cifratrack-api`  | 3000          | **3200**   |
-| PostgreSQL| `cifratrack-db`   | 5432          | **5434**   |
+| Serviço    | Container            | Porta interna | Porta HOST |
+|------------|----------------------|---------------|------------|
+| Frontend   | `cifratrack-web`     | 80 (Nginx)    | **8088**   |
+| Backend    | `cifratrack-api`     | 3000          | **3200**   |
+| PostgreSQL | `cifratrack-db`      | 5432          | **5434**   |
+| MinIO API  | `cifratrack-minio`   | 9000          | **9002**   |
+| MinIO UI   | `cifratrack-minio`   | 9001          | **9003**   |
+| Redis      | `cifratrack-redis`   | 6379          | (interno)  |
 
 Portas evitadas (já em uso na VPS): `3000–3002`, `3100–3102`, `3306–3307`, `5432–5433`, `8001`, `8081`.
 
-O Nginx do front faz proxy de `/v1/*` → `api:3000`, então o browser só precisa da porta **8088**.
+Upload padrão: `UPLOAD_MODE=proxy` (browser → API → MinIO), sem CORS no browser para `:9002`.
 
 ## Uso rápido
 
@@ -16,8 +19,21 @@ O Nginx do front faz proxy de `/v1/*` → `api:3000`, então o browser só preci
 cd deploy
 cp .env.example .env
 # edite senhas, JWT e API_CORS_ORIGIN
+# em S3_PUBLIC_ENDPOINT use http://SEU_IP:9002 (para playback)
 chmod +x deploy.sh
 ./deploy.sh up
+```
+
+Se a API ficar unhealthy:
+
+```bash
+docker compose -f docker-compose.yml --env-file .env logs api --tail=200
+```
+
+Recriar só o MinIO:
+
+```bash
+docker compose -f docker-compose.yml --env-file .env up -d --force-recreate minio minio-init
 ```
 
 ## Estrutura
@@ -35,6 +51,6 @@ deploy/
 
 ## Notas
 
-- `RUN_SEED=true` / `ENSURE_ADMIN=true` no primeiro boot cria o admin (`admin@cifratrack.local` / `Admin123!`); depois pode desligar.
-- Redis/MinIO/worker **não** estão neste compose de 3 serviços. Upload/analyze precisam de S3/Redis externos nas variáveis opcionais do `.env`.
-- MinIO community: CORS via `MINIO_API_CORS_ALLOW_ORIGIN` (ver `docker/minio-cors.readme.md`), não via CORS de bucket.
+- Admin: `ENSURE_ADMIN=true` → `admin@cifratrack.local` / `Admin123!` (ou `SEED_ADMIN_*`).
+- MinIO community: CORS via `MINIO_API_CORS_ALLOW_ORIGIN` (ver `docker/minio-cors.readme.md`).
+- Worker Python de análise (`AUDIO_WORKER_URL`) continua opcional/externo.

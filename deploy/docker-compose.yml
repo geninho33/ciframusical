@@ -1,9 +1,12 @@
-# CifraTrack — produção (3 containers)
+# CifraTrack — produção
 #
 # Portas HOST (evitam conflito com VPS ocupada):
 #   Frontend (Nginx)  → 8088
 #   Backend  (API)    → 3200
 #   PostgreSQL 16     → 5434
+#   MinIO S3 API      → 9002
+#   MinIO Console     → 9003
+#   Redis             → (só rede interna)
 #
 # Em uso na VPS (NÃO usar): 3000-3002, 3100-3102, 3306-3307, 5432-5433, 8001, 8081
 
@@ -30,6 +33,59 @@ services:
     networks:
       - cifratrack_net
 
+  redis:
+    image: redis:7-alpine
+    container_name: cifratrack-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - cifratrack_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - cifratrack_net
+
+  minio:
+    image: minio/minio:latest
+    container_name: cifratrack-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-cifratrack}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-cifratrack_secret}
+      # Community MinIO: CORS cluster-wide
+      MINIO_API_CORS_ALLOW_ORIGIN: ${MINIO_API_CORS_ALLOW_ORIGIN:-*}
+    ports:
+      - "${MINIO_API_HOST_PORT:-9002}:9000"
+      - "${MINIO_CONSOLE_HOST_PORT:-9003}:9001"
+    volumes:
+      - cifratrack_minio_data:/data
+    networks:
+      - cifratrack_net
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: cifratrack-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-cifratrack} $${MINIO_ROOT_PASSWORD:-cifratrack_secret};
+      mc mb --ignore-existing local/$${S3_BUCKET:-cifratrack};
+      echo 'MinIO bucket ready';
+      exit 0;
+      "
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-cifratrack}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-cifratrack_secret}
+      S3_BUCKET: ${S3_BUCKET:-cifratrack}
+    networks:
+      - cifratrack_net
+
   api:
     build:
       context: ..
@@ -39,6 +95,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
     environment:
       NODE_ENV: production
       API_PORT: 3000
@@ -50,16 +110,16 @@ services:
       BETA_MODE: ${BETA_MODE:-false}
       BETA_INVITE_CODES: ${BETA_INVITE_CODES:-}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@cifratrack.local}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-Admin123!}
       RUN_SEED: ${RUN_SEED:-false}
       ENSURE_ADMIN: ${ENSURE_ADMIN:-true}
-      # Opcionais (jobs/storage — configure se tiver Redis/S3 externos)
-      REDIS_URL: ${REDIS_URL:-}
-      S3_ENDPOINT: ${S3_ENDPOINT:-}
-      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      # Browser/player: host público do MinIO (porta 9002 no host)
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://127.0.0.1:9002}
       S3_REGION: ${S3_REGION:-us-east-1}
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
-      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-cifratrack}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-cifratrack_secret}
       S3_BUCKET: ${S3_BUCKET:-cifratrack}
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
       S3_CORS_ORIGINS: ${S3_CORS_ORIGINS:-}
@@ -73,10 +133,10 @@ services:
       - "${API_HOST_PORT:-3200}:3000"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/v1/health"]
-      interval: 15s
+      interval: 10s
       timeout: 5s
-      retries: 8
-      start_period: 40s
+      retries: 12
+      start_period: 60s
     networks:
       - cifratrack_net
 
@@ -99,6 +159,8 @@ services:
 
 volumes:
   cifratrack_pg_data:
+  cifratrack_redis_data:
+  cifratrack_minio_data:
 
 networks:
   cifratrack_net:
