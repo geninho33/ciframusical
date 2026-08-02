@@ -73,3 +73,5 @@ deploy/
 - Admin: `ENSURE_ADMIN=true` → `admin@cifratrack.local` / `Admin123!` (ou `SEED_ADMIN_*`).
 - MinIO community: CORS via `MINIO_API_CORS_ALLOW_ORIGIN` (ver `docker/minio-cors.readme.md`).
 - Worker Python de análise (`AUDIO_WORKER_URL`) continua opcional/externo.
+- Upload: Nginx `client_max_body_size 120m` (evita HTTP 413).
+- Aviso de “senha em página não segura”: o site está em **HTTP**. Para sumir o aviso do browser, coloque HTTPS (domínio + Caddy/Nginx/Certbot na frente da porta 8088).
