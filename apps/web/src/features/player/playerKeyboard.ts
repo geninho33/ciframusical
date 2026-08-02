@@ -60,6 +60,8 @@ export function handlePlayerKeydown(
       void actions.toggle();
       return true;
     case "KeyL":
+      // Shift+L is reserved for lyrics toggle in InteractivePlayer
+      if (e.shiftKey) return false;
       e.preventDefault();
       actions.toggleLoop();
       return true;

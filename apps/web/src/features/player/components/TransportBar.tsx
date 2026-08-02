@@ -21,8 +21,22 @@ export function TransportBar() {
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  function nudgeTranspose(delta: number) {
+    setTranspose(Math.min(6, Math.max(-6, transposeSemitones + delta)));
+  }
+
   return (
-    <div className={styles.bar} role="group" aria-label="Controles do player">
+    <div
+      className={styles.bar}
+      role="group"
+      aria-label="Controles do player"
+      // Avoid accidental form submit if this bar is ever nested in a <form>
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
+          e.preventDefault();
+        }
+      }}
+    >
       <div className={styles.seekRow}>
         <button
           type="button"
@@ -52,22 +66,50 @@ export function TransportBar() {
       </div>
 
       <div className={styles.controls}>
-        <label className={styles.control}>
-          Tom {displayKey ?? "—"}
-          <input
-            type="range"
-            min={-6}
-            max={6}
-            step={1}
-            value={transposeSemitones}
-            onChange={(e) => setTranspose(Number(e.target.value))}
-            aria-label="Transpor tom em semitons"
-          />
-          <span>{transposeSemitones > 0 ? `+${transposeSemitones}` : transposeSemitones}</span>
-        </label>
+        <div className={styles.control} role="group" aria-label="Transposição de tom">
+          <span className={styles.controlTitle}>Tom</span>
+          <div className={styles.tomRow}>
+            <button
+              type="button"
+              className={styles.tomBtn}
+              onClick={() => nudgeTranspose(-1)}
+              aria-label="Diminuir um semitom"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              className={styles.tomBadge}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setTranspose(0);
+              }}
+              aria-label={`Tom atual ${displayKey ?? "—"}. Clique para resetar para o original.`}
+              title="Clique para voltar ao tom original"
+            >
+              {displayKey ?? "—"}
+            </button>
+            <button
+              type="button"
+              className={styles.tomBtn}
+              onClick={() => nudgeTranspose(1)}
+              aria-label="Aumentar um semitom"
+            >
+              +
+            </button>
+            <span className={styles.tomDelta}>
+              {transposeSemitones > 0
+                ? `+${transposeSemitones}`
+                : transposeSemitones}
+            </span>
+          </div>
+        </div>
 
-        <label className={styles.control}>
-          Velocidade
+        <div className={styles.control}>
+          <span className={styles.controlTitle} id="speed-label">
+            Velocidade
+          </span>
           <input
             type="range"
             min={0.5}
@@ -75,10 +117,10 @@ export function TransportBar() {
             step={0.05}
             value={playbackRate}
             onChange={(e) => setPlaybackRate(Number(e.target.value))}
-            aria-label="Velocidade de reprodução"
+            aria-labelledby="speed-label"
           />
           <span>{playbackRate.toFixed(2)}×</span>
-        </label>
+        </div>
 
         <div className={styles.loopGroup} role="group" aria-label="Loop A/B">
           <button type="button" onClick={setLoopA} aria-label="Marcar ponto A">

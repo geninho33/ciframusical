@@ -44,6 +44,7 @@ export function CreatorUploadPage() {
   const [style, setStyle] = useState("playalong");
   const [originalKey, setOriginalKey] = useState("C");
   const [bpm, setBpm] = useState("100");
+  const [lyricsPlain, setLyricsPlain] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +84,7 @@ export function CreatorUploadPage() {
           originalKey,
           bpm: Number(bpm) || undefined,
           difficulty: "intermediate",
+          lyricsPlain: lyricsPlain.trim() || undefined,
         },
         accessToken,
       );
@@ -128,7 +130,7 @@ export function CreatorUploadPage() {
     <section className={styles.page}>
       <h1 className={styles.title}>Nova faixa</h1>
       <p className={styles.subtitle}>
-        Upload MP3 → pipeline de análise (BPM/tom/acordes) → sync draft → publicar.
+        Upload MP3 → análise (BPM/tom/acordes/letra) → Modo Estudo → publicar.
       </p>
       <form className={`${styles.form} ${pageStyles.wide}`} onSubmit={onSubmit}>
         <label className={styles.label}>
@@ -200,6 +202,16 @@ export function CreatorUploadPage() {
             />
           </label>
         </div>
+        <label className={styles.label}>
+          Letra completa (opcional)
+          <textarea
+            className={styles.input}
+            rows={6}
+            placeholder={"Uma linha por verso…\nAcreditei no seu amor\nE acabei como eu estou"}
+            value={lyricsPlain}
+            onChange={(e) => setLyricsPlain(e.target.value)}
+          />
+        </label>
         <label className={styles.label}>
           Arquivo MP3
           <input

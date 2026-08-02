@@ -98,7 +98,20 @@
           "t": { "type": "number", "minimum": 0 },
           "tEnd": { "type": "number", "minimum": 0 },
           "text": { "type": "string" },
-          "sectionId": { "type": ["string", "null"] }
+          "sectionId": { "type": ["string", "null"] },
+          "chords": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["symbol", "charIndex"],
+              "additionalProperties": false,
+              "properties": {
+                "symbol": { "type": "string", "minLength": 1 },
+                "charIndex": { "type": "integer", "minimum": 0 },
+                "eventId": { "type": "string" }
+              }
+            }
+          }
         }
       }
     }

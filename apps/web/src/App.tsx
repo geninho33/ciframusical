@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
 import { AdminApprovalsPage } from "./pages/AdminApprovalsPage";
@@ -10,16 +11,26 @@ import { FavoritesPage } from "./pages/FavoritesPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
-import { PracticePage } from "./pages/PracticePage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { SyncEditorPage } from "./pages/SyncEditorPage";
 import { TrackDetailPage } from "./pages/TrackDetailPage";
 
+const PracticePage = lazy(() =>
+  import("./pages/PracticePage").then((m) => ({ default: m.PracticePage })),
+);
+
 export function App() {
   return (
     <Routes>
-      <Route path="praticar/:slug" element={<PracticePage />} />
+      <Route
+        path="praticar/:slug"
+        element={
+          <Suspense fallback={<p style={{ padding: "2rem" }}>Carregando player…</p>}>
+            <PracticePage />
+          </Suspense>
+        }
+      />
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
         <Route path="catalogo" element={<CatalogPage />} />

@@ -46,6 +46,7 @@ export function createTrack(
     difficulty?: string;
     originalKey?: string;
     bpm?: number;
+    lyricsPlain?: string;
   },
   token: string,
 ) {

@@ -1,5 +1,7 @@
 .page {
   position: relative;
+  min-height: 100vh;
+  background: #000;
 }
 
 .back {
@@ -7,15 +9,16 @@
   top: var(--space-4);
   right: var(--space-5);
   z-index: 5;
-  color: var(--text-muted);
+  color: #9a9a9a;
   font-size: 0.85rem;
   padding: 0.35rem 0.6rem;
   border-radius: var(--radius-sm);
-  background: rgba(11, 13, 16, 0.65);
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid #222;
 }
 
 .back:hover {
-  color: var(--text-primary);
+  color: #fff;
 }
 
 .errorPage {

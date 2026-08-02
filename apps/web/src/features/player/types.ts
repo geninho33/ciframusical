@@ -46,6 +46,12 @@ export type CifraSyncDocument = {
     tEnd?: number;
     text: string;
     sectionId?: string | null;
+    /** Chord markers aligned to character columns (Modo Estudo) */
+    chords?: Array<{
+      symbol: string;
+      charIndex: number;
+      eventId?: string;
+    }>;
   }>;
 };
 

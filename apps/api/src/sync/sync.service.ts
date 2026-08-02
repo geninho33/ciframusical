@@ -110,13 +110,19 @@ export class SyncService {
     const requireApproval =
       (this.config.get<string>("REQUIRE_APPROVAL") ?? "true") === "true";
 
-    const sync = await this.prisma.syncVersion.findFirst({
-      where: {
-        trackId: track.id,
-        isCurrent: true,
-        ...(body.syncVersion ? { version: body.syncVersion } : {}),
-      },
-    });
+    // Prefer the requested version; fall back to current draft.
+    // Clients often send a stale syncVersion after an auto-save PUT.
+    let sync = body.syncVersion
+      ? await this.prisma.syncVersion.findFirst({
+          where: { trackId: track.id, version: body.syncVersion },
+        })
+      : null;
+    if (!sync) {
+      sync = await this.prisma.syncVersion.findFirst({
+        where: { trackId: track.id, isCurrent: true },
+        orderBy: { version: "desc" },
+      });
+    }
     if (!sync) throw new NotFoundException("Sync version not found");
 
     if (requireApproval && !user.roles.includes("admin")) {

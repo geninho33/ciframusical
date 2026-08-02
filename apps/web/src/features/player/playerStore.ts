@@ -17,6 +17,8 @@ type PlayerState = {
   activeEventId: string | null;
   activeEvent: SyncEvent | null;
   syncDoc: CifraSyncDocument | null;
+  /** Cached transposed view — stable reference until transpose/sync changes */
+  displayDoc: CifraSyncDocument | null;
   displayKey: string | null;
   engine: AudioEngine | null;
   autoScroll: boolean;
@@ -39,17 +41,29 @@ type PlayerState = {
   dispose: () => Promise<void>;
 };
 
-function withTranspose(doc: CifraSyncDocument, semitones: number): CifraSyncDocument {
+export function withTranspose(
+  doc: CifraSyncDocument,
+  semitones: number,
+): CifraSyncDocument {
   if (semitones === 0) return doc;
+  const events = doc.events.map((e) => ({
+    ...e,
+    chord: transposeChord(e.chord, semitones),
+  }));
+  const byId = new Map(events.map((e) => [e.id, e.chord.symbol]));
   return {
     ...doc,
     track: {
       ...doc.track,
       originalKey: transposeKey(doc.track.originalKey, semitones),
     },
-    events: doc.events.map((e) => ({
-      ...e,
-      chord: transposeChord(e.chord, semitones),
+    events,
+    lyrics: doc.lyrics?.map((line) => ({
+      ...line,
+      chords: line.chords?.map((c) => ({
+        ...c,
+        symbol: (c.eventId && byId.get(c.eventId)) || c.symbol,
+      })),
     })),
   };
 }
@@ -65,6 +79,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   activeEventId: null,
   activeEvent: null,
   syncDoc: null,
+  displayDoc: null,
   displayKey: null,
   engine: null,
   autoScroll: true,
@@ -74,7 +89,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (prev) await prev.dispose();
 
     const engine = new AudioEngine();
-    set({ status: "loading", engine, trackId, syncDoc, transposeSemitones: 0 });
+    set({
+      status: "loading",
+      engine,
+      trackId,
+      syncDoc,
+      displayDoc: syncDoc,
+      transposeSemitones: 0,
+    });
     await engine.load({
       audioUrl,
       durationSec: syncDoc.track.durationSec,
@@ -110,15 +132,21 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   seek: (t) => {
-    const { engine, syncDoc, transposeSemitones } = get();
-    if (!engine || !syncDoc) return;
+    const { engine, displayDoc, currentTime, activeEventId } = get();
+    if (!engine || !displayDoc) return;
     engine.seek(t);
-    const displayDoc = withTranspose(syncDoc, transposeSemitones);
     const active = getActiveEvent(displayDoc, t);
+    const nextId = active?.id ?? null;
+    if (
+      Math.abs(currentTime - t) < 0.001 &&
+      nextId === activeEventId
+    ) {
+      return;
+    }
     set({
       currentTime: t,
       activeEvent: active,
-      activeEventId: active?.id ?? null,
+      activeEventId: nextId,
     });
   },
 
@@ -129,12 +157,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setTranspose: (semitones) => {
     const clamped = Math.max(-6, Math.min(6, semitones));
-    const { syncDoc, currentTime } = get();
-    if (!syncDoc) return;
+    const { syncDoc, currentTime, transposeSemitones } = get();
+    if (!syncDoc || clamped === transposeSemitones) return;
     const displayDoc = withTranspose(syncDoc, clamped);
     const active = getActiveEvent(displayDoc, currentTime);
     set({
       transposeSemitones: clamped,
+      displayDoc,
       displayKey: displayDoc.track.originalKey,
       activeEvent: active,
       activeEventId: active?.id ?? null,
@@ -169,21 +198,34 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   tick: () => {
-    const { engine, syncDoc, transposeSemitones, status } = get();
-    if (!engine || !syncDoc || status !== "playing") return;
+    const {
+      engine,
+      displayDoc,
+      status,
+      currentTime,
+      activeEventId,
+      loop,
+    } = get();
+    if (!engine || !displayDoc || status !== "playing") return;
+
     const t = engine.tick();
-    if (status === "playing" && t >= engine.getDuration() && !get().loop.enabled) {
-      set({ status: "paused", currentTime: t });
-    }
-    const displayDoc = withTranspose(syncDoc, transposeSemitones);
     const active = getActiveEvent(displayDoc, t);
+    const nextId = active?.id ?? null;
+    const ended =
+      t >= engine.getDuration() && !loop.enabled;
+    const nextStatus: PlayerStatus = ended ? "paused" : status;
+
+    // Avoid setState every rAF when nothing meaningful changed
+    const timeChanged = Math.abs(currentTime - t) >= 0.016;
+    const eventChanged = nextId !== activeEventId;
+    const statusChanged = nextStatus !== status;
+    if (!timeChanged && !eventChanged && !statusChanged) return;
+
     set({
       currentTime: t,
       activeEvent: active,
-      activeEventId: active?.id ?? null,
-      status: engine.getCurrentTime() >= engine.getDuration() && !get().loop.enabled
-        ? "paused"
-        : get().status,
+      activeEventId: nextId,
+      status: nextStatus,
     });
   },
 
@@ -193,6 +235,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       engine: null,
       status: "idle",
       syncDoc: null,
+      displayDoc: null,
       trackId: null,
       activeEvent: null,
       activeEventId: null,
@@ -200,7 +243,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 }));
 
+/** Stable selector — returns cached displayDoc reference from the store. */
 export function selectDisplayDoc(state: PlayerState): CifraSyncDocument | null {
-  if (!state.syncDoc) return null;
-  return withTranspose(state.syncDoc, state.transposeSemitones);
+  return state.displayDoc;
 }

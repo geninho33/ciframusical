@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CifraSyncDocument } from "../types";
 import { handlePlayerKeydown } from "../playerKeyboard";
 import { selectDisplayDoc, usePlayerStore } from "../playerStore";
 import { ChordDiagram } from "./ChordDiagram";
-import { ChordScrollViewport } from "./ChordScrollViewport";
+import { StudyModeViewport } from "./StudyModeViewport";
 import { TransportBar } from "./TransportBar";
 import styles from "./InteractivePlayer.module.css";
 
@@ -27,10 +27,10 @@ export function InteractivePlayer({
   const activeEvent = usePlayerStore((s) => s.activeEvent);
   const displayKey = usePlayerStore((s) => s.displayKey);
   const playbackRate = usePlayerStore((s) => s.playbackRate);
-  const autoScroll = usePlayerStore((s) => s.autoScroll);
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
   const transposeSemitones = usePlayerStore((s) => s.transposeSemitones);
+  const displayDoc = usePlayerStore(selectDisplayDoc);
   const load = usePlayerStore((s) => s.load);
   const tick = usePlayerStore((s) => s.tick);
   const toggle = usePlayerStore((s) => s.toggle);
@@ -40,17 +40,19 @@ export function InteractivePlayer({
   const toggleLoop = usePlayerStore((s) => s.toggleLoop);
   const clearLoop = usePlayerStore((s) => s.clearLoop);
   const dispose = usePlayerStore((s) => s.dispose);
-  const displayDoc = usePlayerStore(selectDisplayDoc);
   const rootRef = useRef<HTMLDivElement>(null);
   const tickRef = useRef(tick);
   tickRef.current = tick;
+  const [showLyrics, setShowLyrics] = useState(true);
 
   useEffect(() => {
     void load({ trackId, syncDoc, audioUrl });
     return () => {
       void dispose();
     };
-  }, [trackId, syncDoc, audioUrl, load, dispose]);
+    // syncDoc comes from PracticePage fetch; transpose does not replace this prop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackId, audioUrl, syncDoc]);
 
   useEffect(() => {
     let raf = 0;
@@ -64,6 +66,20 @@ export function InteractivePlayer({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      const editable =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable);
+
+      // Shift+L → toggle letra (vinculado ao switch do header)
+      if (!editable && e.code === "KeyL" && e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowLyrics((v) => !v);
+        return;
+      }
+
       handlePlayerKeydown(e, {
         toggle,
         seekBy: (delta) => {
@@ -110,17 +126,50 @@ export function InteractivePlayer({
       className={styles.root}
       tabIndex={0}
       role="application"
-      aria-label={`Play-along ${title}`}
+      aria-label={`Modo estudo ${title}`}
     >
       <p className={styles.srOnly} id="player-shortcuts">
-        Atalhos: Espaço play/pause, setas seek, Home/End, J/K, L loop, +/− tom,
-        [ ] velocidade, Esc limpa loop.
+        Modo estudo. Atalhos: Espaço play/pause, setas seek, Shift+L letra,
+        L loop, +/− tom.
       </p>
       <header className={styles.hud}>
-        <div>
-          <p className={styles.artist}>{artist}</p>
-          <h1 className={styles.title}>{title}</h1>
+        <div className={styles.hudTop}>
+          <div className={styles.hudLeft}>
+            <p className={styles.mode}>Modo Estudo</p>
+            <p className={styles.artist}>{artist}</p>
+            <h1 className={styles.title}>{title}</h1>
+          </div>
+
+          <div className={styles.hudCenter}>
+            <div className={styles.switch}>
+              <span className={styles.switchLabel} id="lyrics-toggle-label">
+                Letra
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showLyrics}
+                aria-labelledby="lyrics-toggle-label"
+                aria-keyshortcuts="Shift+L"
+                title="Shift+L"
+                aria-label={showLyrics ? "Ocultar letra (Shift+L)" : "Exibir letra (Shift+L)"}
+                className={styles.switchTrack}
+                data-on={showLyrics}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowLyrics((v) => !v);
+                }}
+              >
+                <span className={styles.switchThumb} />
+              </button>
+              <kbd className={styles.kbd}>⇧L</kbd>
+            </div>
+          </div>
+
+          <div className={styles.hudSpacer} aria-hidden />
         </div>
+
         <dl className={styles.meta}>
           <div>
             <dt>Tom</dt>
@@ -131,35 +180,32 @@ export function InteractivePlayer({
             <dd>{Math.round(doc.track.bpm * playbackRate)}</dd>
           </div>
           <div>
+            <dt>Acorde</dt>
+            <dd>{activeEvent?.chord.symbol ?? "—"}</dd>
+          </div>
+          <div>
             <dt>Status</dt>
             <dd>{status}</dd>
           </div>
         </dl>
       </header>
 
-      <div
-        className={styles.live}
-        aria-live="polite"
-        aria-atomic="true"
-      >
+      <div className={styles.live} aria-live="polite" aria-atomic="true">
         Acorde atual: {activeEvent?.chord.symbol ?? "—"}
       </div>
 
       <div className={styles.body}>
-        <ChordScrollViewport
+        <StudyModeViewport
           doc={doc}
           activeEventId={activeEventId}
-          autoScroll={autoScroll}
+          currentTime={currentTime}
+          showLyrics={showLyrics}
+          onSeekLine={seek}
         />
         <aside className={styles.side}>
           <ChordDiagram symbol={activeEvent?.chord.symbol ?? "—"} />
-          {!audioUrl ? (
-            <p className={styles.note}>
-              Fixture sem MP3 — o clock Tone.js guia a cifra (play-along).
-            </p>
-          ) : null}
           <p className={styles.hint} aria-describedby="player-shortcuts">
-            Teclado: Espaço · ←/→ · +/− · [ ] · L
+            Viewport fixa na linha atual · Shift+L letra
           </p>
         </aside>
       </div>

@@ -66,13 +66,66 @@
   min-width: 140px;
 }
 
+.controlTitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .control input {
   accent-color: var(--accent);
 }
 
-.control span {
+.control > span:last-child {
   font-family: var(--font-mono);
   color: var(--text-primary);
+}
+
+.tomRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tomBtn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tomBtn:hover {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+.tomBadge {
+  min-width: 48px;
+  height: 32px;
+  padding: 0 0.65rem;
+  border: 1px solid #f5d54766;
+  border-radius: var(--radius-sm);
+  background: #1a1608;
+  color: #f5d547;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.tomBadge:hover {
+  background: #2a2210;
+}
+
+.tomDelta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-width: 1.5rem;
 }
 
 .loopGroup {

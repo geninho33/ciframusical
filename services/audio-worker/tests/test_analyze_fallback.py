@@ -15,3 +15,4 @@ def test_fallback_builds_sync(tmp_path):
     assert result["bpm"] > 0
     assert result["syncDocument"]["formatVersion"] == "1.0.0"
     assert len(result["syncDocument"]["events"]) >= 1
+    assert len(result["syncDocument"]["lyrics"]) >= 1

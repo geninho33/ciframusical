@@ -23,6 +23,7 @@ export type AnalyzeJobPayload = {
   title: string;
   artist: string;
   requestedBy: string;
+  lyricsPlain?: string | null;
 };
 
 @Injectable()
@@ -111,6 +112,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       title: track.title,
       artist: track.artist?.name ?? "Unknown",
       requestedBy: user.sub,
+      lyricsPlain: track.lyricsPlain,
     };
 
     if (this.queue) {
@@ -231,6 +233,16 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
           bpm: Math.round(data.bpm),
           originalKey: data.originalKey,
           durationMs: Math.round(data.durationSec * 1000),
+          lyricsPlain: Array.isArray(
+            (data.syncDocument as { lyrics?: Array<{ text?: string }> }).lyrics,
+          )
+            ? (
+                data.syncDocument as { lyrics: Array<{ text?: string }> }
+              ).lyrics
+                .map((l) => l.text)
+                .filter(Boolean)
+                .join("\n")
+            : undefined,
         },
       }),
       this.prisma.processingJob.update({
@@ -301,6 +313,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
         mediaStorageKey: payload.mediaStorageKey,
         title: payload.title,
         artist: payload.artist,
+        lyricsPlain: payload.lyricsPlain ?? null,
         callbackBaseUrl:
           this.config.get<string>("API_INTERNAL_URL") ?? "http://localhost:3000/v1",
         internalToken: token,

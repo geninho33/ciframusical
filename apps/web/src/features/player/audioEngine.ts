@@ -1,4 +1,5 @@
-import * as Tone from "tone";
+type ToneModule = typeof import("tone");
+type GrainPlayer = import("tone").GrainPlayer;
 
 type LoopBounds = { enabled: boolean; a: number | null; b: number | null };
 
@@ -6,10 +7,15 @@ type LoopBounds = { enabled: boolean; a: number | null; b: number | null };
  * Play-along clock:
  * - with audio URL → Tone.GrainPlayer (time-stretch com pitch preserve)
  * - without audio → clock baseado em performance.now (fixture Phase 3)
+ *
+ * Tone.js is loaded lazily so mere page navigation does not create an
+ * AudioContext (browser autoplay policy).
  */
 export class AudioEngine {
-  private player: Tone.GrainPlayer | null = null;
+  private tone: ToneModule | null = null;
+  private player: GrainPlayer | null = null;
   private startedAudioContext = false;
+  private pendingUrl: string | null = null;
   private durationSec = 0;
   private loop: LoopBounds = { enabled: false, a: null, b: null };
   private rate = 1;
@@ -17,7 +23,15 @@ export class AudioEngine {
   private anchorWall = 0;
   private anchorMedia = 0;
 
+  private async getTone() {
+    if (!this.tone) {
+      this.tone = await import("tone");
+    }
+    return this.tone;
+  }
+
   async ensureStarted() {
+    const Tone = await this.getTone();
     if (!this.startedAudioContext) {
       await Tone.start();
       this.startedAudioContext = true;
@@ -30,18 +44,24 @@ export class AudioEngine {
     this.playing = false;
     this.anchorMedia = 0;
     this.anchorWall = 0;
+    this.pendingUrl = options.audioUrl ?? null;
 
-    if (options.audioUrl) {
-      this.player = new Tone.GrainPlayer({
-        url: options.audioUrl,
-        grainSize: 0.12,
-        overlap: 0.05,
-        loop: false,
-      }).toDestination();
-      await Tone.loaded();
-      if (this.player.buffer.duration > 0) {
-        this.durationSec = this.player.buffer.duration;
-      }
+    // Defer GrainPlayer until first play() (user gesture) when possible.
+    // For fixture-only tracks no Tone import is needed until play.
+  }
+
+  private async ensurePlayer() {
+    if (!this.pendingUrl || this.player) return;
+    const Tone = await this.getTone();
+    this.player = new Tone.GrainPlayer({
+      url: this.pendingUrl,
+      grainSize: 0.12,
+      overlap: 0.05,
+      loop: false,
+    }).toDestination();
+    await Tone.loaded();
+    if (this.player.buffer.duration > 0) {
+      this.durationSec = this.player.buffer.duration;
     }
   }
 
@@ -57,6 +77,7 @@ export class AudioEngine {
 
   async play() {
     await this.ensureStarted();
+    await this.ensurePlayer();
     const t = this.getCurrentTime();
     this.anchorMedia = t;
     this.anchorWall = performance.now();
@@ -141,5 +162,6 @@ export class AudioEngine {
   async dispose() {
     this.pause();
     await this.disposePlayer();
+    this.pendingUrl = null;
   }
 }

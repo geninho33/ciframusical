@@ -12,7 +12,7 @@
   "meta": {
     "source": "manual",
     "generatedAt": "2026-07-31T21:00:00Z",
-    "generator": "cifratrack-fixture/phase-3"
+    "generator": "cifratrack-fixture/study-mode"
   },
   "sections": [
     { "id": "s1", "name": "Intro", "startSec": 0, "endSec": 8 },
@@ -24,124 +24,144 @@
     {
       "id": "e1",
       "t": 0,
-      "tEnd": 2,
+      "tEnd": 4,
       "chord": { "symbol": "G", "root": "G", "quality": "maj", "bass": null, "extensions": [] },
       "lyricLine": null,
       "sectionId": "s1"
     },
     {
       "id": "e2",
-      "t": 2,
-      "tEnd": 4,
-      "chord": { "symbol": "Em", "root": "E", "quality": "min", "bass": null, "extensions": [] },
-      "lyricLine": null,
-      "sectionId": "s1"
-    },
-    {
-      "id": "e3",
       "t": 4,
-      "tEnd": 6,
-      "chord": { "symbol": "C", "root": "C", "quality": "maj", "bass": null, "extensions": [] },
-      "lyricLine": null,
-      "sectionId": "s1"
-    },
-    {
-      "id": "e4",
-      "t": 6,
       "tEnd": 8,
       "chord": { "symbol": "D", "root": "D", "quality": "maj", "bass": null, "extensions": [] },
       "lyricLine": null,
       "sectionId": "s1"
     },
     {
-      "id": "e5",
+      "id": "e3",
       "t": 8,
       "tEnd": 12,
-      "chord": { "symbol": "G", "root": "G", "quality": "maj", "bass": null, "extensions": [] },
-      "lyricLine": "Sob a luz da manhã",
+      "chord": { "symbol": "Em", "root": "E", "quality": "min", "bass": null, "extensions": [] },
+      "lyricLine": "Acreditei no seu amor",
+      "sectionId": "s2"
+    },
+    {
+      "id": "e4",
+      "t": 12,
+      "tEnd": 16,
+      "chord": { "symbol": "Bm", "root": "B", "quality": "min", "bass": null, "extensions": [] },
+      "lyricLine": "Acreditei no seu amor",
+      "sectionId": "s2"
+    },
+    {
+      "id": "e5",
+      "t": 16,
+      "tEnd": 20,
+      "chord": { "symbol": "Em", "root": "E", "quality": "min", "bass": null, "extensions": [] },
+      "lyricLine": "E acabei como eu estou",
       "sectionId": "s2"
     },
     {
       "id": "e6",
-      "t": 12,
-      "tEnd": 16,
-      "chord": { "symbol": "Em", "root": "E", "quality": "min", "bass": null, "extensions": [] },
-      "lyricLine": "eu penso em você",
+      "t": 20,
+      "tEnd": 24,
+      "chord": { "symbol": "Bm", "root": "B", "quality": "min", "bass": null, "extensions": [] },
+      "lyricLine": "E acabei como eu estou",
       "sectionId": "s2"
     },
     {
       "id": "e7",
-      "t": 16,
-      "tEnd": 20,
-      "chord": { "symbol": "C", "root": "C", "quality": "maj", "bass": null, "extensions": [] },
-      "lyricLine": "e o tempo passa",
-      "sectionId": "s2"
+      "t": 24,
+      "tEnd": 28,
+      "chord": { "symbol": "Am", "root": "A", "quality": "min", "bass": null, "extensions": [] },
+      "lyricLine": "Sozinho, sozinho",
+      "sectionId": "s3"
     },
     {
       "id": "e8",
-      "t": 20,
-      "tEnd": 24,
+      "t": 28,
+      "tEnd": 32,
       "chord": { "symbol": "D", "root": "D", "quality": "maj", "bass": null, "extensions": [] },
-      "lyricLine": "sem te esquecer",
-      "sectionId": "s2"
+      "lyricLine": "Sozinho, sozinho",
+      "sectionId": "s3"
     },
     {
       "id": "e9",
-      "t": 24,
-      "tEnd": 28,
-      "chord": { "symbol": "C", "root": "C", "quality": "maj", "bass": null, "extensions": [] },
-      "lyricLine": "Meu amor, vem cá",
+      "t": 32,
+      "tEnd": 36,
+      "chord": { "symbol": "G", "root": "G", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": "Meu amor, vem cá ficar",
       "sectionId": "s3"
     },
     {
       "id": "e10",
-      "t": 28,
-      "tEnd": 32,
-      "chord": { "symbol": "G", "root": "G", "quality": "maj", "bass": null, "extensions": [] },
-      "lyricLine": "ficar um pouco mais",
+      "t": 36,
+      "tEnd": 40,
+      "chord": { "symbol": "D", "root": "D", "quality": "maj", "bass": null, "extensions": [] },
+      "lyricLine": "Meu amor, vem cá ficar",
       "sectionId": "s3"
     },
     {
       "id": "e11",
-      "t": 32,
-      "tEnd": 36,
-      "chord": { "symbol": "Am", "root": "A", "quality": "min", "bass": null, "extensions": [] },
-      "lyricLine": "nessa canção",
-      "sectionId": "s3"
-    },
-    {
-      "id": "e12",
-      "t": 36,
-      "tEnd": 40,
-      "chord": { "symbol": "D", "root": "D", "quality": "maj", "bass": null, "extensions": [] },
-      "lyricLine": "que eu fiz pra nós",
-      "sectionId": "s3"
-    },
-    {
-      "id": "e13",
       "t": 40,
       "tEnd": 44,
-      "chord": { "symbol": "G", "root": "G", "quality": "maj", "bass": null, "extensions": [] },
+      "chord": { "symbol": "Em", "root": "E", "quality": "min", "bass": null, "extensions": [] },
       "lyricLine": null,
       "sectionId": "s4"
     },
     {
-      "id": "e14",
+      "id": "e12",
       "t": 44,
       "tEnd": 48,
-      "chord": { "symbol": "D", "root": "D", "quality": "maj", "bass": null, "extensions": [] },
+      "chord": { "symbol": "G", "root": "G", "quality": "maj", "bass": null, "extensions": [] },
       "lyricLine": null,
       "sectionId": "s4"
     }
   ],
   "lyrics": [
-    { "id": "l1", "t": 8, "tEnd": 12, "text": "Sob a luz da manhã", "sectionId": "s2" },
-    { "id": "l2", "t": 12, "tEnd": 16, "text": "eu penso em você", "sectionId": "s2" },
-    { "id": "l3", "t": 16, "tEnd": 20, "text": "e o tempo passa", "sectionId": "s2" },
-    { "id": "l4", "t": 20, "tEnd": 24, "text": "sem te esquecer", "sectionId": "s2" },
-    { "id": "l5", "t": 24, "tEnd": 28, "text": "Meu amor, vem cá", "sectionId": "s3" },
-    { "id": "l6", "t": 28, "tEnd": 32, "text": "ficar um pouco mais", "sectionId": "s3" },
-    { "id": "l7", "t": 32, "tEnd": 36, "text": "nessa canção", "sectionId": "s3" },
-    { "id": "l8", "t": 36, "tEnd": 40, "text": "que eu fiz pra nós", "sectionId": "s3" }
+    {
+      "id": "l1",
+      "t": 8,
+      "tEnd": 16,
+      "text": "Acreditei no seu amor",
+      "sectionId": "s2",
+      "chords": [
+        { "symbol": "Em", "charIndex": 0, "eventId": "e3" },
+        { "symbol": "Bm", "charIndex": 18, "eventId": "e4" }
+      ]
+    },
+    {
+      "id": "l2",
+      "t": 16,
+      "tEnd": 24,
+      "text": "E acabei como eu estou",
+      "sectionId": "s2",
+      "chords": [
+        { "symbol": "Em", "charIndex": 0, "eventId": "e5" },
+        { "symbol": "Bm", "charIndex": 18, "eventId": "e6" }
+      ]
+    },
+    {
+      "id": "l3",
+      "t": 24,
+      "tEnd": 32,
+      "text": "Sozinho, sozinho",
+      "sectionId": "s3",
+      "chords": [
+        { "symbol": "Am", "charIndex": 0, "eventId": "e7" },
+        { "symbol": "D", "charIndex": 10, "eventId": "e8" }
+      ]
+    },
+    {
+      "id": "l4",
+      "t": 32,
+      "tEnd": 40,
+      "text": "Meu amor, vem cá ficar",
+      "sectionId": "s3",
+      "chords": [
+        { "symbol": "G", "charIndex": 0, "eventId": "e9" },
+        { "symbol": "D", "charIndex": 18, "eventId": "e10" }
+      ]
+    }
   ]
 }

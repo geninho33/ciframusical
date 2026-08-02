@@ -37,6 +37,7 @@ class AnalyzeRequest(BaseModel):
     callbackBaseUrl: str
     internalToken: str
     s3: S3Config
+    lyricsPlain: str | None = None
 
 
 class HealthResponse(BaseModel):
@@ -112,7 +113,19 @@ async def analyze(
                 {"progress": 40, "stage": "beat_track"},
             )
 
-            result = analyze_file(tmp_path, body.title, body.artist)
+            await _callback(
+                body.callbackBaseUrl,
+                f"internal/jobs/{body.jobId}/progress",
+                body.internalToken,
+                {"progress": 55, "stage": "lyrics"},
+            )
+
+            result = analyze_file(
+                tmp_path,
+                body.title,
+                body.artist,
+                lyrics_plain=body.lyricsPlain,
+            )
 
             await _callback(
                 body.callbackBaseUrl,

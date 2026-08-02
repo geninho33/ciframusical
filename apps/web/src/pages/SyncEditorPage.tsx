@@ -151,12 +151,14 @@ export function SyncEditorPage() {
     setSaving(true);
     setError(null);
     try {
+      let syncVersion = version ?? undefined;
       if (doc) {
         const saved = await putTrackSync(track.id, accessToken, doc);
+        syncVersion = saved.version;
         setVersion(saved.version);
       }
       const res = await publishTrack(track.id, accessToken, {
-        syncVersion: version ?? undefined,
+        syncVersion,
         changelog: "Ajustes no editor de sync",
       });
       setMessage(res.message);

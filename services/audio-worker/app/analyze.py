@@ -12,6 +12,8 @@ from typing import Any
 
 import numpy as np
 
+from app.lyrics import attach_lyrics, lyrics_engine
+
 try:
     import librosa
 
@@ -61,13 +63,23 @@ def _chord_from_chroma(frame: np.ndarray) -> tuple[str, str, str, float]:
     return best[0], best[1], best[2], max(0.0, min(1.0, best[3]))
 
 
-def analyze_file(path: str, title: str, artist: str) -> dict[str, Any]:
+def analyze_file(
+    path: str,
+    title: str,
+    artist: str,
+    lyrics_plain: str | None = None,
+) -> dict[str, Any]:
     if HAS_LIBROSA:
-        return _analyze_librosa(path, title, artist)
-    return _analyze_fallback(path, title, artist)
+        return _analyze_librosa(path, title, artist, lyrics_plain=lyrics_plain)
+    return _analyze_fallback(path, title, artist, lyrics_plain=lyrics_plain)
 
 
-def _analyze_librosa(path: str, title: str, artist: str) -> dict[str, Any]:
+def _analyze_librosa(
+    path: str,
+    title: str,
+    artist: str,
+    lyrics_plain: str | None = None,
+) -> dict[str, Any]:
     y, sr = librosa.load(path, sr=22050, mono=True)
     duration = float(librosa.get_duration(y=y, sr=sr))
     tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
@@ -130,6 +142,14 @@ def _analyze_librosa(path: str, title: str, artist: str) -> dict[str, Any]:
         ]
 
     chords_avg = float(np.mean(confidences)) if confidences else 0.5
+    events, lyrics, lyrics_source = attach_lyrics(
+        path=path,
+        title=title,
+        artist=artist,
+        events=events,
+        lyrics_plain=lyrics_plain,
+        duration=duration,
+    )
     doc = _build_doc(
         title=title,
         artist=artist,
@@ -137,8 +157,15 @@ def _analyze_librosa(path: str, title: str, artist: str) -> dict[str, Any]:
         bpm=bpm,
         duration=duration,
         events=events,
-        confidence={"bpm": 0.9, "key": key_conf, "chordsAvg": chords_avg},
+        lyrics=lyrics,
+        confidence={
+            "bpm": 0.9,
+            "key": key_conf,
+            "chordsAvg": chords_avg,
+            "lyrics": 0.85 if lyrics_source in {"whisper", "creator"} else 0.35,
+        },
         generator="cifratrack-worker/librosa",
+        lyrics_source=lyrics_source,
     )
     return {
         "syncDocument": doc,
@@ -149,7 +176,12 @@ def _analyze_librosa(path: str, title: str, artist: str) -> dict[str, Any]:
     }
 
 
-def _analyze_fallback(path: str, title: str, artist: str) -> dict[str, Any]:
+def _analyze_fallback(
+    path: str,
+    title: str,
+    artist: str,
+    lyrics_plain: str | None = None,
+) -> dict[str, Any]:
     # Duration via soundfile when possible
     duration = 32.0
     try:
@@ -193,6 +225,14 @@ def _analyze_fallback(path: str, title: str, artist: str) -> dict[str, Any]:
         t = t_end
         i += 1
 
+    events, lyrics, lyrics_source = attach_lyrics(
+        path=path,
+        title=title,
+        artist=artist,
+        events=events,
+        lyrics_plain=lyrics_plain,
+        duration=duration,
+    )
     doc = _build_doc(
         title=title,
         artist=artist,
@@ -200,8 +240,15 @@ def _analyze_fallback(path: str, title: str, artist: str) -> dict[str, Any]:
         bpm=bpm,
         duration=duration,
         events=events,
-        confidence={"bpm": 0.4, "key": 0.35, "chordsAvg": 0.35},
+        lyrics=lyrics,
+        confidence={
+            "bpm": 0.4,
+            "key": 0.35,
+            "chordsAvg": 0.35,
+            "lyrics": 0.8 if lyrics_source == "creator" else 0.3,
+        },
         generator="cifratrack-worker/fallback",
+        lyrics_source=lyrics_source,
     )
     return {
         "syncDocument": doc,
@@ -220,8 +267,10 @@ def _build_doc(
     bpm: float,
     duration: float,
     events: list[dict[str, Any]],
+    lyrics: list[dict[str, Any]],
     confidence: dict[str, float],
     generator: str,
+    lyrics_source: str,
 ) -> dict[str, Any]:
     mid = duration / 2
     return {
@@ -240,15 +289,20 @@ def _build_doc(
             "generatedAt": _now_iso(),
             "generator": generator,
             "confidence": confidence,
+            "lyricsSource": lyrics_source,
         },
         "sections": [
             {"id": "s1", "name": "A", "startSec": 0.0, "endSec": round(mid, 3)},
             {"id": "s2", "name": "B", "startSec": round(mid, 3), "endSec": round(duration, 3)},
         ],
         "events": events,
-        "lyrics": [],
+        "lyrics": lyrics,
     }
 
 
 def analyze_available() -> dict[str, Any]:
-    return {"librosa": HAS_LIBROSA, "engine": "librosa" if HAS_LIBROSA else "fallback"}
+    return {
+        "librosa": HAS_LIBROSA,
+        "engine": "librosa" if HAS_LIBROSA else "fallback",
+        "lyrics": lyrics_engine(),
+    }

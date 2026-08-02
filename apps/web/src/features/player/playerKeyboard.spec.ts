@@ -26,12 +26,14 @@ function key(code: string, opts: Partial<KeyboardEvent> = {}) {
 
 describe("playerKeyboard", () => {
   it("ignores editable targets", () => {
-    expect(isEditableTarget({ tagName: "INPUT" } as EventTarget)).toBe(true);
-    expect(isEditableTarget({ tagName: "TEXTAREA" } as EventTarget)).toBe(true);
-    expect(isEditableTarget({ tagName: "DIV" } as EventTarget)).toBe(false);
+    expect(isEditableTarget({ tagName: "INPUT" } as unknown as EventTarget)).toBe(true);
+    expect(isEditableTarget({ tagName: "TEXTAREA" } as unknown as EventTarget)).toBe(true);
+    expect(isEditableTarget({ tagName: "DIV" } as unknown as EventTarget)).toBe(false);
 
     const actions = makeActions();
-    const e = key("Space", { target: { tagName: "INPUT" } as EventTarget });
+    const e = key("Space", {
+      target: { tagName: "INPUT" } as unknown as EventTarget,
+    });
     expect(handlePlayerKeydown(e, actions)).toBe(false);
     expect(actions.toggle).not.toHaveBeenCalled();
   });
