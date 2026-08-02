@@ -25,6 +25,24 @@ chmod +x deploy.sh
 # SKIP_GIT_PULL=true ./deploy.sh up   # se quiser pular o pull
 ```
 
+## Atalho em `~/.ssh` (VPS)
+
+Instale uma vez (a partir do clone):
+
+```bash
+bash deploy/ssh/install-on-vps.sh
+```
+
+Depois, de qualquer pasta:
+
+```bash
+~/.ssh/cifratrack-deploy.sh up      # git pull + build + up
+~/.ssh/cifratrack-deploy.sh pull    # só git pull
+~/.ssh/cifratrack-deploy.sh logs
+```
+
+O install grava `~/.ssh/cifratrack.env` com `CIFRATRACK_ROOT` apontando para o clone.
+
 Se a API ficar unhealthy:
 
 ```bash
