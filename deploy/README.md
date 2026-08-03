@@ -76,4 +76,5 @@ deploy/
 - Worker Python: serviço `audio-worker` (`AUDIO_WORKER_URL=http://audio-worker:8001`). Sem ele a análise fica em timeout.
 - Diagnóstico: `docker compose --env-file .env logs audio-worker api --tail=100`
 - Upload: Nginx `client_max_body_size 120m` (evita HTTP 413).
+- Áudio/sync no browser: `STORAGE_BROWSER_MODE=proxy` → `GET /v1/storage/objects?key=...` (same-origin). **Não** use `S3_PUBLIC_ENDPOINT=http://127.0.0.1:9002` para o front — isso aponta para o PC do usuário e quebra com CORS.
 - Aviso de “senha em página não segura”: o site está em **HTTP**. Para sumir o aviso do browser, coloque HTTPS (domínio + Caddy/Nginx/Certbot na frente da porta 8088).

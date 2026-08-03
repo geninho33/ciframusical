@@ -7,8 +7,14 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { Readable } from "stream";
 
 function envOr(config: ConfigService, key: string, fallback: string) {
   const value = config.get<string>(key)?.trim();
@@ -178,6 +184,78 @@ export class StorageService implements OnModuleInit {
     };
   }
 
+  /**
+   * URL for the browser. Default = same-origin API proxy (no MinIO CORS / no 127.0.0.1).
+   * Set STORAGE_BROWSER_MODE=presigned to return direct S3/MinIO signed URLs.
+   */
+  async getBrowserObjectUrl(params: {
+    key: string;
+    expiresInSeconds?: number;
+  }) {
+    const mode = (
+      this.config.get<string>("STORAGE_BROWSER_MODE") ?? "proxy"
+    ).toLowerCase();
+    if (mode === "presigned") {
+      return this.createPresignedGetUrl(params);
+    }
+    return {
+      url: `/v1/storage/objects?key=${encodeURIComponent(params.key)}`,
+      expiresAt: new Date(
+        Date.now() + (params.expiresInSeconds ?? 3600) * 1000,
+      ).toISOString(),
+    };
+  }
+
+  /** Server-side read via internal S3_ENDPOINT (never use public/presigned host). */
+  async getObjectBuffer(key: string): Promise<{
+    body: Buffer;
+    contentType: string;
+  }> {
+    try {
+      const out = await this.client.send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+      if (!out.Body) throw new NotFoundException(`Object not found: ${key}`);
+      const bytes = await out.Body.transformToByteArray();
+      return {
+        body: Buffer.from(bytes),
+        contentType: out.ContentType ?? "application/octet-stream",
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      this.logger.warn(`getObjectBuffer failed for ${key}: ${String(error)}`);
+      throw new NotFoundException(`Object not found: ${key}`);
+    }
+  }
+
+  async getObjectJson<T = unknown>(key: string): Promise<T> {
+    const { body } = await this.getObjectBuffer(key);
+    return JSON.parse(body.toString("utf8")) as T;
+  }
+
+  async getObjectStream(key: string): Promise<{
+    body: Readable;
+    contentType: string;
+    contentLength?: number;
+  }> {
+    try {
+      const out = await this.client.send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+      if (!out.Body) throw new NotFoundException(`Object not found: ${key}`);
+      return {
+        body: out.Body as Readable,
+        contentType: out.ContentType ?? "application/octet-stream",
+        contentLength:
+          typeof out.ContentLength === "number" ? out.ContentLength : undefined,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      this.logger.warn(`getObjectStream failed for ${key}: ${String(error)}`);
+      throw new NotFoundException(`Object not found: ${key}`);
+    }
+  }
+
   async putObject(params: {
     key: string;
     body: Buffer | string;
@@ -195,6 +273,18 @@ export class StorageService implements OnModuleInit {
 
   getBucket() {
     return this.bucket;
+  }
+
+  assertSafeObjectKey(key: string) {
+    if (
+      !key ||
+      key.includes("..") ||
+      key.startsWith("/") ||
+      !/^(audio|sync|covers)\//.test(key)
+    ) {
+      return false;
+    }
+    return true;
   }
 
   private resolveCorsOrigins(): string[] {

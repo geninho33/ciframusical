@@ -221,7 +221,9 @@ export class CatalogService {
   private async toListItem(track: TrackWithRelations) {
     let coverUrl: string | null = null;
     if (track.coverStorageKey) {
-      coverUrl = (await this.storage.createPresignedGetUrl({ key: track.coverStorageKey })).url;
+      coverUrl = (
+        await this.storage.getBrowserObjectUrl({ key: track.coverStorageKey })
+      ).url;
     }
 
     return {
@@ -253,7 +255,7 @@ export class CatalogService {
     } | null = null;
 
     if (audioFile) {
-      const signed = await this.storage.createPresignedGetUrl({
+      const signed = await this.storage.getBrowserObjectUrl({
         key: audioFile.storageKey,
       });
       audio = {
@@ -275,7 +277,7 @@ export class CatalogService {
     } | null = null;
 
     if (currentSync) {
-      const signedSync = await this.storage.createPresignedGetUrl({
+      const signedSync = await this.storage.getBrowserObjectUrl({
         key: currentSync.storageKey,
       });
       sync = {

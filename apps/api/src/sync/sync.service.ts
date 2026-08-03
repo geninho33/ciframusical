@@ -30,14 +30,10 @@ export class SyncService {
       throw new NotFoundException("No sync version for this track");
     }
 
-    const signed = await this.storage.createPresignedGetUrl({
-      key: current.storageKey,
-    });
-    const res = await fetch(signed.url);
-    if (!res.ok) {
-      throw new BadRequestException("Failed to load sync document from storage");
-    }
-    const document = (await res.json()) as SyncDocument;
+    // Read via internal MinIO endpoint (not S3_PUBLIC_ENDPOINT / 127.0.0.1).
+    const document = await this.storage.getObjectJson<SyncDocument>(
+      current.storageKey,
+    );
 
     return {
       trackId: track.id,

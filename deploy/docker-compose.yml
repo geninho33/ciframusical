@@ -142,6 +142,8 @@ services:
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
       S3_CORS_ORIGINS: ${S3_CORS_ORIGINS:-}
       UPLOAD_MODE: ${UPLOAD_MODE:-proxy}
+      # proxy = browser baixa áudio/sync via /v1/storage (same-origin). Nunca use 127.0.0.1.
+      STORAGE_BROWSER_MODE: ${STORAGE_BROWSER_MODE:-proxy}
       AUDIO_WORKER_URL: ${AUDIO_WORKER_URL:-http://audio-worker:8001}
       API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:3000/v1}
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-cifratrack-internal}
