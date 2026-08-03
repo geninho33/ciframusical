@@ -38,3 +38,21 @@
   fill: var(--text-muted);
   font-size: 12px;
 }
+
+.barre {
+  fill: var(--accent);
+  opacity: 0.92;
+}
+
+.dot {
+  fill: var(--accent);
+}
+
+.tuning {
+  margin: 0.15rem 0 0;
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+}
