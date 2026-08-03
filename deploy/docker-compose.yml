@@ -7,8 +7,9 @@
 #   MinIO S3 API      → 9002
 #   MinIO Console     → 9003
 #   Redis             → (só rede interna)
+#   Audio worker      → (só rede interna :8001)
 #
-# Em uso na VPS (NÃO usar): 3000-3002, 3100-3102, 3306-3307, 5432-5433, 8001, 8081
+# Em uso na VPS (NÃO usar no host): 3000-3002, 3100-3102, 3306-3307, 5432-5433, 8001, 8081
 
 name: cifratrack
 
@@ -86,6 +87,21 @@ services:
     networks:
       - cifratrack_net
 
+  audio-worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.worker
+    container_name: cifratrack-audio-worker
+    restart: unless-stopped
+    depends_on:
+      minio:
+        condition: service_started
+    environment:
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-cifratrack-internal}
+    # Sem porta no host (8001 já pode estar ocupada na VPS) — só rede Docker
+    networks:
+      - cifratrack_net
+
   api:
     build:
       context: ..
@@ -98,6 +114,8 @@ services:
       redis:
         condition: service_healthy
       minio:
+        condition: service_started
+      audio-worker:
         condition: service_started
     environment:
       NODE_ENV: production
@@ -124,9 +142,9 @@ services:
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
       S3_CORS_ORIGINS: ${S3_CORS_ORIGINS:-}
       UPLOAD_MODE: ${UPLOAD_MODE:-proxy}
-      AUDIO_WORKER_URL: ${AUDIO_WORKER_URL:-}
+      AUDIO_WORKER_URL: ${AUDIO_WORKER_URL:-http://audio-worker:8001}
       API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:3000/v1}
-      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-cifratrack-internal}
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
     ports:

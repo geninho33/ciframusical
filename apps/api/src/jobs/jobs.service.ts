@@ -315,51 +315,94 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     return { ok: true, traceId: jobId };
   }
 
-  private async dispatchToPythonWorker(job: Job<AnalyzeJobPayload> | { data: AnalyzeJobPayload }) {
+  private async dispatchToPythonWorker(
+    job: Job<AnalyzeJobPayload> | { data: AnalyzeJobPayload },
+  ) {
     const payload = job.data;
     const workerUrl =
-      this.config.get<string>("AUDIO_WORKER_URL") ?? "http://localhost:8001";
+      this.config.get<string>("AUDIO_WORKER_URL")?.trim() ||
+      (this.config.get<string>("NODE_ENV") === "production"
+        ? ""
+        : "http://localhost:8001");
     const token =
-      this.config.get<string>("INTERNAL_API_TOKEN") ?? "dev-internal-token";
+      this.config.get<string>("INTERNAL_API_TOKEN")?.trim() ||
+      "dev-internal-token";
 
-    await this.updateProgress(payload.jobId, { progress: 5, stage: "normalize" });
+    try {
+      if (!workerUrl) {
+        await this.failJob(payload.jobId, {
+          message: "AUDIO_WORKER_URL não configurado",
+          detail:
+            "Suba o serviço audio-worker (compose) e defina AUDIO_WORKER_URL=http://audio-worker:8001",
+        });
+        throw new Error("AUDIO_WORKER_URL not set");
+      }
 
-    const response = await fetch(`${workerUrl}/analyze`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Internal-Token": token,
-      },
-      body: JSON.stringify({
-        jobId: payload.jobId,
-        trackId: payload.trackId,
-        mediaStorageKey: payload.mediaStorageKey,
-        title: payload.title,
-        artist: payload.artist,
-        lyricsPlain: payload.lyricsPlain ?? null,
-        callbackBaseUrl:
-          this.config.get<string>("API_INTERNAL_URL") ?? "http://localhost:3000/v1",
-        internalToken: token,
-        s3: {
-          endpoint: this.config.get<string>("S3_ENDPOINT") ?? "http://localhost:9000",
-          accessKeyId: this.config.get<string>("S3_ACCESS_KEY_ID") ?? "cifratrack",
-          secretAccessKey:
-            this.config.get<string>("S3_SECRET_ACCESS_KEY") ?? "cifratrack_secret",
-          bucket: this.config.get<string>("S3_BUCKET") ?? "cifratrack",
-          region: this.config.get<string>("S3_REGION") ?? "us-east-1",
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      await this.failJob(payload.jobId, {
-        message: "Audio worker failed",
-        detail: text.slice(0, 500),
+      await this.updateProgress(payload.jobId, {
+        progress: 5,
+        stage: "normalize",
       });
-      throw new Error(`Worker HTTP ${response.status}: ${text}`);
-    }
 
-    return response.json();
+      const response = await fetch(`${workerUrl}/analyze`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Internal-Token": token,
+        },
+        body: JSON.stringify({
+          jobId: payload.jobId,
+          trackId: payload.trackId,
+          mediaStorageKey: payload.mediaStorageKey,
+          title: payload.title,
+          artist: payload.artist,
+          lyricsPlain: payload.lyricsPlain ?? null,
+          callbackBaseUrl:
+            this.config.get<string>("API_INTERNAL_URL")?.trim() ||
+            "http://localhost:3000/v1",
+          internalToken: token,
+          s3: {
+            endpoint:
+              this.config.get<string>("S3_ENDPOINT")?.trim() ||
+              "http://localhost:9000",
+            accessKeyId:
+              this.config.get<string>("S3_ACCESS_KEY_ID")?.trim() ||
+              "cifratrack",
+            secretAccessKey:
+              this.config.get<string>("S3_SECRET_ACCESS_KEY")?.trim() ||
+              "cifratrack_secret",
+            bucket:
+              this.config.get<string>("S3_BUCKET")?.trim() || "cifratrack",
+            region:
+              this.config.get<string>("S3_REGION")?.trim() || "us-east-1",
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        await this.failJob(payload.jobId, {
+          message: "Audio worker failed",
+          detail: text.slice(0, 500),
+        });
+        throw new Error(`Worker HTTP ${response.status}: ${text}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error);
+      // Evita job eterno em "queued/normalize" quando o worker está offline
+      if (!message.includes("AUDIO_WORKER_URL") && !message.includes("Worker HTTP")) {
+        try {
+          await this.failJob(payload.jobId, {
+            message: "Falha ao contatar audio-worker",
+            detail: message.slice(0, 500),
+          });
+        } catch {
+          /* ignore secondary fail */
+        }
+      }
+      throw error;
+    }
   }
 }

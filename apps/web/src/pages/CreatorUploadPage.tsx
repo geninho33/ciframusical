@@ -62,20 +62,33 @@ async function waitForJob(
   token: string,
   onProgress: (label: string, jobPercent: number) => void,
 ) {
-  for (let i = 0; i < 120; i++) {
+  // Análise real (librosa) pode passar de 2 min em VPS pequena
+  for (let i = 0; i < 300; i++) {
     const job = await fetchJob(jobId, token);
-    onProgress(`Análise: ${job.stage ?? job.status}`, job.progress ?? 0);
+    const stuckQueued = (job.stage === "queued" || job.progress === 0) && i >= 45;
+    onProgress(
+      stuckQueued
+        ? `Análise ainda enfileirada… verifique audio-worker (${job.stage ?? job.status})`
+        : `Análise: ${job.stage ?? job.status}`,
+      job.progress ?? 0,
+    );
     if (job.status === "completed") return job;
     if (job.status === "failed") {
-      throw new Error(
-        typeof job.error === "object" && job.error && "message" in job.error
-          ? String((job.error as { message: string }).message)
-          : "Análise falhou",
-      );
+      const err = job.error;
+      const detail =
+        typeof err === "object" && err && "message" in err
+          ? String((err as { message: string }).message) +
+            ("detail" in err && (err as { detail?: string }).detail
+              ? ` — ${String((err as { detail?: string }).detail)}`
+              : "")
+          : "Análise falhou";
+      throw new Error(detail);
     }
     await new Promise((r) => setTimeout(r, 1000));
   }
-  throw new Error("Timeout aguardando análise");
+  throw new Error(
+    "Timeout aguardando análise. Confira: docker compose logs audio-worker api --tail=100",
+  );
 }
 
 export function CreatorUploadPage() {
@@ -191,13 +204,26 @@ export function CreatorUploadPage() {
           true,
         );
         if (completed.jobId) {
-          await waitForJob(completed.jobId, accessToken, (label, jobPercent) => {
-            setProgress({
-              percent: 60 + (jobPercent / 100) * 35,
-              label,
-              phase: "analyzing",
-            });
-          });
+          try {
+            await waitForJob(
+              completed.jobId,
+              accessToken,
+              (label, jobPercent) => {
+                setProgress({
+                  percent: 60 + (jobPercent / 100) * 35,
+                  label,
+                  phase: "analyzing",
+                });
+              },
+            );
+          } catch (analyzeErr) {
+            // Upload ok — abre editor mesmo se a análise falhar/timeout
+            setError(
+              analyzeErr instanceof Error
+                ? `${analyzeErr.message} (abrindo editor com draft)`
+                : String(analyzeErr),
+            );
+          }
         }
       }
 

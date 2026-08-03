@@ -8,6 +8,7 @@
 | MinIO API  | `cifratrack-minio`   | 9000          | **9002**   |
 | MinIO UI   | `cifratrack-minio`   | 9001          | **9003**   |
 | Redis      | `cifratrack-redis`   | 6379          | (interno)  |
+| Worker     | `cifratrack-audio-worker` | 8001     | (interno)  |
 
 Portas evitadas (já em uso na VPS): `3000–3002`, `3100–3102`, `3306–3307`, `5432–5433`, `8001`, `8081`.
 
@@ -72,6 +73,7 @@ deploy/
 
 - Admin: `ENSURE_ADMIN=true` → `admin@cifratrack.local` / `Admin123!` (ou `SEED_ADMIN_*`).
 - MinIO community: CORS via `MINIO_API_CORS_ALLOW_ORIGIN` (ver `docker/minio-cors.readme.md`).
-- Worker Python de análise (`AUDIO_WORKER_URL`) continua opcional/externo.
+- Worker Python: serviço `audio-worker` (`AUDIO_WORKER_URL=http://audio-worker:8001`). Sem ele a análise fica em timeout.
+- Diagnóstico: `docker compose --env-file .env logs audio-worker api --tail=100`
 - Upload: Nginx `client_max_body_size 120m` (evita HTTP 413).
 - Aviso de “senha em página não segura”: o site está em **HTTP**. Para sumir o aviso do browser, coloque HTTPS (domínio + Caddy/Nginx/Certbot na frente da porta 8088).
